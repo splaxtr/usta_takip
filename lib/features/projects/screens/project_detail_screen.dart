@@ -74,11 +74,26 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         ),
         centerTitle: true,
         actions: [
+          // Projeyi Tamamla Butonu
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: () {
-              // Proje düzenleme
-            },
+            icon: Icon(
+              projectData!['status'] == 'completed'
+                  ? Icons.restart_alt
+                  : Icons.check_circle_outline,
+              color: projectData!['status'] == 'completed'
+                  ? Colors.orange
+                  : Colors.green,
+            ),
+            onPressed: () => _showCompleteProjectDialog(),
+            tooltip: projectData!['status'] == 'completed'
+                ? 'Projeyi Aktif Yap'
+                : 'Projeyi Tamamla',
+          ),
+          // Projeyi Sil Butonu
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () => _showDeleteProjectDialog(),
+            tooltip: 'Projeyi Sil',
           ),
         ],
       ),
@@ -767,7 +782,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     String selectedType = 'full';
     DateTime selectedDate = DateTime.now();
     final wageController = TextEditingController(
-      text: standardWage?.toStringAsFixed(0) ?? '500',
+      text: standardWage?.toStringAsFixed(0) ?? '2500',
     );
     final noteController = TextEditingController();
 
@@ -852,12 +867,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                   Icons.check_circle,
                   Colors.green,
                   selectedType,
-                  standardWage ?? 500,
+                  standardWage ?? 2500,
                   (type) {
                     setState(() {
                       selectedType = type;
                       wageController.text =
-                          standardWage?.toStringAsFixed(0) ?? '500';
+                          standardWage?.toStringAsFixed(0) ?? '2500';
                     });
                   },
                 ),
@@ -867,12 +882,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                   Icons.timelapse,
                   Colors.orange,
                   selectedType,
-                  (standardWage ?? 500) / 2,
+                  (standardWage ?? 2500) / 2,
                   (type) {
                     setState(() {
                       selectedType = type;
                       wageController.text =
-                          ((standardWage ?? 500) / 2).toStringAsFixed(0);
+                          ((standardWage ?? 2500) / 2).toStringAsFixed(0);
                     });
                   },
                 ),
@@ -882,12 +897,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                   Icons.star,
                   Colors.amber,
                   selectedType,
-                  (standardWage ?? 500) * 2,
+                  (standardWage ?? 2500) * 2,
                   (type) {
                     setState(() {
                       selectedType = type;
                       wageController.text =
-                          ((standardWage ?? 500) * 2).toStringAsFixed(0);
+                          ((standardWage ?? 2500) * 2).toStringAsFixed(0);
                     });
                   },
                 ),
@@ -2511,7 +2526,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   Future<void> _showEditDailyWageDialog(
       int mesaiKey, double? currentWage) async {
     final wageController = TextEditingController(
-      text: currentWage?.toStringAsFixed(0) ?? '500',
+      text: currentWage?.toStringAsFixed(0) ?? '2500',
     );
 
     await showDialog(
@@ -3442,6 +3457,312 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             icon: const Icon(Icons.delete_forever, size: 20),
             label: const Text('Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Projeyi Tamamla/Aktif Yap Dialog
+  Future<void> _showCompleteProjectDialog() async {
+    bool isCompleted = projectData!['status'] == 'completed';
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: Row(
+          children: [
+            Icon(
+              isCompleted ? Icons.restart_alt : Icons.check_circle,
+              color: isCompleted ? Colors.orange : Colors.green,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isCompleted ? 'Projeyi Aktif Yap' : 'Projeyi Tamamla',
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isCompleted
+                  ? 'Bu projeyi yeniden aktif hale getirmek istediğinize emin misiniz?'
+                  : 'Bu projeyi tamamlamak istediğinize emin misiniz?',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isCompleted
+                    ? Colors.orange.withOpacity(0.1)
+                    : Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isCompleted
+                      ? Colors.orange.withOpacity(0.3)
+                      : Colors.green.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: isCompleted ? Colors.orange : Colors.green,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isCompleted
+                          ? 'Proje aktif projelere geri dönecek'
+                          : 'Proje tamamlananlar listesine taşınacak',
+                      style: TextStyle(
+                        color: isCompleted
+                            ? Colors.orange[300]
+                            : Colors.green[300],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              // Proje durumunu değiştir
+              projectData!['status'] = isCompleted ? 'active' : 'completed';
+              projectData!['completedAt'] =
+                  isCompleted ? null : DateTime.now().toString();
+
+              await projeBox.putAt(widget.projectKey, projectData);
+
+              setState(() {
+                _loadProject();
+              });
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isCompleted
+                          ? 'Proje aktif hale getirildi!'
+                          : 'Proje tamamlandı!',
+                    ),
+                    backgroundColor: isCompleted ? Colors.orange : Colors.green,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isCompleted ? Colors.orange : Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            icon: Icon(isCompleted ? Icons.restart_alt : Icons.check),
+            label: Text(isCompleted ? 'Aktif Yap' : 'Tamamla'),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Projeyi Sil Dialog
+  Future<void> _showDeleteProjectDialog() async {
+    // Proje istatistiklerini hesapla
+    int employeeCount = 0;
+    double totalIncome = 0;
+    double totalExpenses = 0;
+
+    for (var key in mesaiBox.keys) {
+      var mesai = mesaiBox.get(key);
+      if (mesai['projectKey'] == widget.projectKey) {
+        employeeCount++;
+      }
+    }
+
+    for (var key in gelirGiderBox.keys) {
+      var item = gelirGiderBox.get(key);
+      if (item['projectKey'] == widget.projectKey) {
+        if (item['type'] == 'gelir') {
+          totalIncome += (item['amount'] ?? 0.0);
+        } else if (item['type'] == 'gider') {
+          totalExpenses += (item['amount'] ?? 0.0);
+        }
+      }
+    }
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Projeyi Sil',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  children: [
+                    const TextSpan(text: 'Bu işlem '),
+                    TextSpan(
+                      text: projectData!['name'] ?? 'projeyi',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const TextSpan(
+                        text:
+                            ' ve tüm ilişkili verileri kalıcı olarak silecek.'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: Colors.red, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Silinecek Veriler:',
+                          style: TextStyle(
+                            color: Colors.red[300],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _buildWarningItem('$employeeCount çalışan kaydı'),
+                    _buildWarningItem(
+                        '${totalIncome.toStringAsFixed(0)}₺ gelir kaydı'),
+                    _buildWarningItem(
+                        '${totalExpenses.toStringAsFixed(0)}₺ gider kaydı'),
+                    _buildWarningItem('Tüm mesai ve ödeme kayıtları'),
+                    _buildWarningItem('Tüm finansal işlemler'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Bu işlem geri alınamaz!',
+                        style: TextStyle(
+                          color: Colors.orange[300],
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              // 1. Mesai kayıtlarını sil
+              List<int> mesaiKeysToDelete = [];
+              for (var key in mesaiBox.keys) {
+                var mesai = mesaiBox.get(key);
+                if (mesai['projectKey'] == widget.projectKey) {
+                  mesaiKeysToDelete.add(key);
+                }
+              }
+              for (var key in mesaiKeysToDelete) {
+                await mesaiBox.delete(key);
+              }
+
+              // 2. Gelir/Gider kayıtlarını sil
+              List<int> gelirGiderKeysToDelete = [];
+              for (var key in gelirGiderBox.keys) {
+                var item = gelirGiderBox.get(key);
+                if (item['projectKey'] == widget.projectKey) {
+                  gelirGiderKeysToDelete.add(key);
+                }
+              }
+              for (var key in gelirGiderKeysToDelete) {
+                await gelirGiderBox.delete(key);
+              }
+
+              // 3. Projeyi sil
+              await projeBox.deleteAt(widget.projectKey);
+
+              if (context.mounted) {
+                Navigator.pop(context); // Dialog'u kapat
+                Navigator.pop(context); // Proje detay sayfasından çık
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Proje ve tüm ilişkili veriler silindi!'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.delete_forever, size: 20),
+            label: const Text('Projeyi Sil'),
           ),
         ],
       ),

@@ -57,12 +57,11 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     // Özet kartlar bölümü
-                    // Birden fazla box'ı dinlemek için
                     ValueListenableBuilder(
                       valueListenable: Hive.box('projeler').listenable(),
                       builder: (context, Box projeBox, _) {
                         return ValueListenableBuilder(
-                          valueListenable: Hive.box('gelirGider').listenable(),
+                          valueListenable: Hive.box('gelirgider').listenable(),
                           builder: (context, Box gelirGiderBox, _) {
                             return ValueListenableBuilder(
                               valueListenable:
@@ -73,7 +72,7 @@ class DashboardScreen extends StatelessWidget {
                                     .where((p) => p['status'] == 'active')
                                     .length;
 
-                                // Net Bakiye - gelirGider box'ından hesapla
+                                // Net Bakiye - gelir/gider
                                 double totalIncome = 0;
                                 double totalExpense = 0;
 
@@ -100,19 +99,15 @@ class DashboardScreen extends StatelessWidget {
 
                                 double netBalance = totalIncome - totalExpense;
 
-                                // Toplam çalışan sayısı - mesai box'ından
-                                Set<String> uniqueEmployees = {};
+                                // TOPLAM ÇALIŞAN SAYISI - ✅ DÜZELTME BURASI
+                                Set<int> uniqueEmployeeKeys = {};
                                 for (var mesai in mesaiBox.values) {
-                                  String? employeeName =
-                                      mesai['employeeName'] ??
-                                          mesai['calisanAdi'] ??
-                                          mesai['name'];
-                                  if (employeeName != null &&
-                                      employeeName.isNotEmpty) {
-                                    uniqueEmployees.add(employeeName);
+                                  if (mesai['employeeKey'] != null) {
+                                    uniqueEmployeeKeys
+                                        .add(mesai['employeeKey'] as int);
                                   }
                                 }
-                                int totalEmployees = uniqueEmployees.length;
+                                int totalEmployees = uniqueEmployeeKeys.length;
 
                                 return Column(
                                   children: [
@@ -355,17 +350,14 @@ class DashboardScreen extends StatelessWidget {
             return ValueListenableBuilder(
               valueListenable: gelirGiderBox.listenable(),
               builder: (context, Box gelirGiderBox, _) {
-                if (projelerBox.isEmpty) {
-                  return _buildEmptyState();
-                }
+                // ✅ Sadece aktif projeleri filtrele
+                List<Map<String, dynamic>> activeProjects = [];
 
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: projelerBox.length,
-                  itemBuilder: (context, index) {
-                    final project = projelerBox.getAt(index) as Map;
+                for (int index = 0; index < projelerBox.length; index++) {
+                  final project = projelerBox.getAt(index) as Map;
 
+                  // Sadece aktif projeleri ekle
+                  if (project['status'] == 'active') {
                     int employeeCount = 0;
                     double projectIncome = 0;
                     double projectExpenses = 0;
@@ -397,14 +389,32 @@ class DashboardScreen extends StatelessWidget {
                       }
                     }
 
-                    final updatedProject = {
-                      ...project,
-                      'employeeCount': employeeCount,
-                      'income': projectIncome,
-                      'expenses': projectExpenses,
-                    };
+                    activeProjects.add({
+                      'index': index,
+                      'data': {
+                        ...project,
+                        'employeeCount': employeeCount,
+                        'income': projectIncome,
+                        'expenses': projectExpenses,
+                      }
+                    });
+                  }
+                }
 
-                    return _buildProjectCard(context, updatedProject, index);
+                if (activeProjects.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: activeProjects.length,
+                  itemBuilder: (context, index) {
+                    return _buildProjectCard(
+                      context,
+                      activeProjects[index]['data'],
+                      activeProjects[index]['index'],
+                    );
                   },
                 );
               },
