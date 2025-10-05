@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/widgets.dart' as pw;
+import '../../../core/utils/pdf_helper.dart';
+import '../../../core/utils/date_helper.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final int projectKey;
@@ -12,6 +15,38 @@ class ProjectDetailScreen extends StatefulWidget {
 
   @override
   State<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
+}
+
+class EmployeeWorkSummary {
+  String employeeName;
+  int workDays;
+  double totalWage;
+
+  EmployeeWorkSummary({
+    required this.employeeName,
+    required this.workDays,
+    required this.totalWage,
+  });
+}
+
+class WeeklyReport {
+  final DateTime weekStart;
+  final DateTime weekEnd;
+  final double patronPayments; // Patron ödemeleri
+  final double employeeWages; // Çalışan maaşları
+  final double expenses; // Masraflar
+  final double netBalance; // Net bakiye
+
+  WeeklyReport({
+    required this.weekStart,
+    required this.weekEnd,
+    required this.patronPayments,
+    required this.employeeWages,
+    required this.expenses,
+  }) : netBalance = patronPayments - (employeeWages + expenses);
+
+  bool get hasActivity =>
+      patronPayments > 0 || employeeWages > 0 || expenses > 0;
 }
 
 class _ProjectDetailScreenState extends State<ProjectDetailScreen>
@@ -1297,58 +1332,69 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   // ==================== FİNANS TAB ====================
   Widget _buildFinanceTab() {
     return ValueListenableBuilder(
-      valueListenable: gelirGiderBox.listenable(), // ✅ Box'ı dinle
+      valueListenable: gelirGiderBox.listenable(),
       builder: (context, Box box, _) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        return ValueListenableBuilder(
+          valueListenable: mesaiBox.listenable(),
+          builder: (context, Box mesaiBox, _) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showAddTransactionDialog('gelir'),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Gelir Ekle'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                  // Butonlar
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showAddTransactionDialog('gelir'),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Gelir Ekle'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showAddTransactionDialog('gider'),
+                          icon: const Icon(Icons.remove),
+                          label: const Text('Gider Ekle'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Finansal Özet
+                  _buildFinancialSummary(),
+                  const SizedBox(height: 20),
+
+                  // ✅ YENİ: Haftalık Raporlar
+                  _buildWeeklyReports(),
+                  const SizedBox(height: 20),
+
+                  // İşlemler Listesi
+                  const Text(
+                    'Tüm İşlemler',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showAddTransactionDialog('gider'),
-                      icon: const Icon(Icons.remove),
-                      label: const Text('Gider Ekle'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 12),
+                  _buildTransactionsList(),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // Finansal Özet
-              _buildFinancialSummary(),
-              const SizedBox(height: 20),
-
-              const Text(
-                'İşlemler',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildTransactionsList(),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1391,11 +1437,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSummaryColumn('Gelir', totalIncome, Colors.green.shade300),
+              _buildPaymentSummaryColumn(
+                  'Gelir', totalIncome, Colors.green.shade300),
               Container(width: 1, height: 40, color: Colors.white30),
-              _buildSummaryColumn('Gider', totalExpenses, Colors.red.shade300),
+              _buildPaymentSummaryColumn(
+                  'Gider', totalExpenses, Colors.red.shade300),
               Container(width: 1, height: 40, color: Colors.white30),
-              _buildSummaryColumn(
+              _buildPaymentSummaryColumn(
                 'Kalan',
                 totalIncome - totalExpenses,
                 (totalIncome - totalExpenses) >= 0
@@ -1446,7 +1494,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     );
   }
 
-  Widget _buildSummaryColumn(String label, double value, Color color) {
+  Widget _buildPaymentSummaryColumn(String label, double value, Color color) {
     return Column(
       children: [
         Text(
@@ -3763,6 +3811,1024 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             ),
             icon: const Icon(Icons.delete_forever, size: 20),
             label: const Text('Projeyi Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<WeeklyReport> _calculateWeeklyReports() {
+    Map<String, WeeklyReport> weeklyData = {};
+
+    // 1. Patron ödemelerini topla (gelir)
+    for (var key in gelirGiderBox.keys) {
+      var item = gelirGiderBox.get(key);
+      if (item['projectKey'] == widget.projectKey && item['type'] == 'gelir') {
+        try {
+          DateTime date = DateTime.parse(item['date']);
+          DateTime weekStart = DateHelper.getWeekStart(date);
+          String weekKey = weekStart.toIso8601String();
+
+          if (!weeklyData.containsKey(weekKey)) {
+            weeklyData[weekKey] = WeeklyReport(
+              weekStart: weekStart,
+              weekEnd: DateHelper.getWeekEnd(date),
+              patronPayments: 0,
+              employeeWages: 0,
+              expenses: 0,
+            );
+          }
+
+          weeklyData[weekKey] = WeeklyReport(
+            weekStart: weeklyData[weekKey]!.weekStart,
+            weekEnd: weeklyData[weekKey]!.weekEnd,
+            patronPayments:
+                weeklyData[weekKey]!.patronPayments + (item['amount'] ?? 0.0),
+            employeeWages: weeklyData[weekKey]!.employeeWages,
+            expenses: weeklyData[weekKey]!.expenses,
+          );
+        } catch (e) {
+          // Tarih parse hatası
+        }
+      }
+    }
+
+    // 2. Giderleri topla
+    for (var key in gelirGiderBox.keys) {
+      var item = gelirGiderBox.get(key);
+      if (item['projectKey'] == widget.projectKey && item['type'] == 'gider') {
+        try {
+          DateTime date = DateTime.parse(item['date']);
+          DateTime weekStart = DateHelper.getWeekStart(date);
+          String weekKey = weekStart.toIso8601String();
+
+          if (!weeklyData.containsKey(weekKey)) {
+            weeklyData[weekKey] = WeeklyReport(
+              weekStart: weekStart,
+              weekEnd: DateHelper.getWeekEnd(date),
+              patronPayments: 0,
+              employeeWages: 0,
+              expenses: 0,
+            );
+          }
+
+          weeklyData[weekKey] = WeeklyReport(
+            weekStart: weeklyData[weekKey]!.weekStart,
+            weekEnd: weeklyData[weekKey]!.weekEnd,
+            patronPayments: weeklyData[weekKey]!.patronPayments,
+            employeeWages: weeklyData[weekKey]!.employeeWages,
+            expenses: weeklyData[weekKey]!.expenses + (item['amount'] ?? 0.0),
+          );
+        } catch (e) {
+          // Tarih parse hatası
+        }
+      }
+    }
+
+    // 3. Çalışan maaşlarını topla
+    for (var key in mesaiBox.keys) {
+      var mesai = mesaiBox.get(key);
+      if (mesai['projectKey'] == widget.projectKey) {
+        if (mesai['workDetails'] != null && mesai['workDetails'] is List) {
+          List workDetails = mesai['workDetails'];
+          for (var detail in workDetails) {
+            try {
+              // Tarih formatı: "dd/MM/yyyy" -> DateTime'a çevir
+              List<String> dateParts = detail['date'].split('/');
+              DateTime date = DateTime(
+                int.parse(dateParts[2]),
+                int.parse(dateParts[1]),
+                int.parse(dateParts[0]),
+              );
+
+              DateTime weekStart = DateHelper.getWeekStart(date);
+              String weekKey = weekStart.toIso8601String();
+
+              if (!weeklyData.containsKey(weekKey)) {
+                weeklyData[weekKey] = WeeklyReport(
+                  weekStart: weekStart,
+                  weekEnd: DateHelper.getWeekEnd(date),
+                  patronPayments: 0,
+                  employeeWages: 0,
+                  expenses: 0,
+                );
+              }
+
+              weeklyData[weekKey] = WeeklyReport(
+                weekStart: weeklyData[weekKey]!.weekStart,
+                weekEnd: weeklyData[weekKey]!.weekEnd,
+                patronPayments: weeklyData[weekKey]!.patronPayments,
+                employeeWages: weeklyData[weekKey]!.employeeWages +
+                    (detail['wage'] ?? 0.0),
+                expenses: weeklyData[weekKey]!.expenses,
+              );
+            } catch (e) {
+              // Tarih parse hatası
+            }
+          }
+        }
+      }
+    }
+
+    // Haftaları tarihe göre sırala ve sadece aktivite olanları döndür
+    List<WeeklyReport> reports = weeklyData.values
+        .where((report) => report.hasActivity)
+        .toList()
+      ..sort((a, b) => b.weekStart.compareTo(a.weekStart)); // Yeniden eskiye
+
+    return reports;
+  }
+
+  Widget _buildWeeklyReports() {
+    List<WeeklyReport> reports = _calculateWeeklyReports();
+
+    if (reports.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E).withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.calendar_today_outlined,
+                size: 48, color: Colors.grey[600]),
+            const SizedBox(height: 12),
+            Text(
+              'Henüz haftalık rapor yok',
+              style: TextStyle(color: Colors.grey[400], fontSize: 14),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Haftalık Raporlar',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => _showAllWeeklyReportsDialog(reports),
+              icon: const Icon(Icons.list, size: 18),
+              label: const Text('Tümünü Gör'),
+              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Son 3 haftayı göster
+        ...reports.take(3).map((report) => _buildWeeklyReportCard(report)),
+      ],
+    );
+  }
+
+  Widget _buildWeeklyReportCard(WeeklyReport report) {
+    Color netColor = report.netBalance >= 0 ? Colors.green : Colors.red;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: netColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calendar_month, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                DateHelper.getWeekRangeString(report.weekStart),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Gelir
+          _buildReportRow(
+            Icons.arrow_downward,
+            'Patron Ödemesi',
+            report.patronPayments,
+            Colors.green,
+          ),
+
+          // Çalışan Maaşları
+          _buildReportRow(
+            Icons.people,
+            'Çalışan Maaşları',
+            report.employeeWages,
+            Colors.orange,
+          ),
+
+          // Masraflar
+          _buildReportRow(
+            Icons.shopping_cart,
+            'Masraflar',
+            report.expenses,
+            Colors.red,
+          ),
+
+          const Divider(color: Colors.grey, height: 20),
+
+          // Net Bakiye
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    report.netBalance >= 0 ? Icons.check_circle : Icons.warning,
+                    color: netColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Net Bakiye',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${report.netBalance >= 0 ? '+' : ''}${report.netBalance.toStringAsFixed(0)}₺',
+                style: TextStyle(
+                  color: netColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportRow(
+      IconData icon, String label, double amount, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(color: Colors.grey[400], fontSize: 13),
+              ),
+            ],
+          ),
+          Text(
+            '${amount.toStringAsFixed(0)}₺',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAllWeeklyReportsDialog(List<WeeklyReport> reports) async {
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxHeight: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month,
+                        color: Colors.blue, size: 28),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Tüm Haftalık Raporlar',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Genel Özet
+              _buildWeeklySummaryCard(reports),
+
+              // Liste
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: reports.length,
+                  itemBuilder: (context, index) {
+                    return _buildWeeklyReportCardExpanded(
+                        reports[index], index + 1);
+                  },
+                ),
+              ),
+
+              // Footer Butonlar
+              // Footer Butonlar
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF101922),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _generatePDF(reports,
+                              showDownload: true); // İndir modu
+                        },
+                        icon: const Icon(Icons.download, size: 20),
+                        label: const Text('PDF İndir'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                          side: const BorderSide(color: Colors.blue),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _generatePDF(reports,
+                              showDownload: false); // Paylaş modu
+                        },
+                        icon: const Icon(Icons.share, size: 20),
+                        label: const Text('Paylaş'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// Genel özet kartı
+  Widget _buildWeeklySummaryCard(List<WeeklyReport> reports) {
+    double totalPatronPayments = 0;
+    double totalEmployeeWages = 0;
+    double totalExpenses = 0;
+
+    for (var report in reports) {
+      totalPatronPayments += report.patronPayments;
+      totalEmployeeWages += report.employeeWages;
+      totalExpenses += report.expenses;
+    }
+
+    double totalNet =
+        totalPatronPayments - (totalEmployeeWages + totalExpenses);
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: totalNet >= 0
+              ? [Colors.green.shade700, Colors.green.shade500]
+              : [Colors.red.shade700, Colors.red.shade500],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: (totalNet >= 0 ? Colors.green : Colors.red).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Toplam ${reports.length} Hafta',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildWeeklySummaryColumn(
+                'Ödeme',
+                totalPatronPayments,
+                Icons.account_balance_wallet,
+              ),
+              Container(width: 1, height: 50, color: Colors.white30),
+              _buildWeeklySummaryColumn(
+                'Maaş',
+                totalEmployeeWages,
+                Icons.people,
+              ),
+              Container(width: 1, height: 50, color: Colors.white30),
+              _buildWeeklySummaryColumn(
+                'Masraf',
+                totalExpenses,
+                Icons.shopping_cart,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Net Bakiye:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${totalNet >= 0 ? '+' : ''}${totalNet.toStringAsFixed(0)}₺',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklySummaryColumn(String label, double value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          '${value.toStringAsFixed(0)}₺',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+// Genişletilmiş haftalık rapor kartı
+  Widget _buildWeeklyReportCardExpanded(WeeklyReport report, int weekNumber) {
+    Color netColor = report.netBalance >= 0 ? Colors.green : Colors.red;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101922),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: netColor.withOpacity(0.3)),
+      ),
+      child: Theme(
+        data: ThemeData(
+          dividerColor: Colors.transparent,
+          expansionTileTheme: const ExpansionTileThemeData(
+            backgroundColor: Colors.transparent,
+            collapsedBackgroundColor: Colors.transparent,
+          ),
+        ),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          leading: CircleAvatar(
+            backgroundColor: netColor.withOpacity(0.2),
+            child: Text(
+              '$weekNumber',
+              style: TextStyle(
+                color: netColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          title: Text(
+            DateHelper.getWeekRangeString(report.weekStart),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          subtitle: Text(
+            'Net: ${report.netBalance >= 0 ? '+' : ''}${report.netBalance.toStringAsFixed(0)}₺',
+            style: TextStyle(
+              color: netColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          trailing: Icon(
+            Icons.expand_more,
+            color: Colors.grey[400],
+          ),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E).withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  _buildDetailRow(
+                    Icons.arrow_downward,
+                    'Patron Ödemesi',
+                    report.patronPayments,
+                    Colors.green,
+                  ),
+                  const Divider(height: 16, color: Colors.grey),
+                  _buildDetailRow(
+                    Icons.people,
+                    'Çalışan Maaşları',
+                    report.employeeWages,
+                    Colors.orange,
+                  ),
+                  const Divider(height: 16, color: Colors.grey),
+                  _buildDetailRow(
+                    Icons.shopping_cart,
+                    'Masraflar',
+                    report.expenses,
+                    Colors.red,
+                  ),
+                  const Divider(height: 16, color: Colors.grey),
+                  _buildDetailRow(
+                    report.netBalance >= 0 ? Icons.check_circle : Icons.warning,
+                    'Net Bakiye',
+                    report.netBalance,
+                    netColor,
+                    isBold: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    IconData icon,
+    String label,
+    double amount,
+    Color color, {
+    bool isBold = false,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[300],
+              fontSize: isBold ? 15 : 14,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+        Text(
+          '${amount >= 0 && isBold ? '+' : ''}${amount.toStringAsFixed(0)}₺',
+          style: TextStyle(
+            color: color,
+            fontSize: isBold ? 18 : 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _generateAndSharePDF(List<WeeklyReport> reports) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Colors.blue),
+        ),
+      );
+
+      double totalPatronPayments = 0;
+      double totalEmployeeWages = 0;
+      double totalExpenses = 0;
+
+      List<WeeklyReportData> pdfReports = [];
+      List<TransactionData> allTransactions = [];
+      List<EmployeeWorkData> employeeWorkData = [];
+
+      for (var report in reports) {
+        totalPatronPayments += report.patronPayments;
+        totalEmployeeWages += report.employeeWages;
+        totalExpenses += report.expenses;
+
+        pdfReports.add(WeeklyReportData(
+          weekRange: DateHelper.getWeekRangeString(report.weekStart),
+          patronPayments: report.patronPayments,
+          employeeWages: report.employeeWages,
+          expenses: report.expenses,
+          netBalance: report.netBalance,
+        ));
+      }
+
+      for (var key in gelirGiderBox.keys) {
+        var item = gelirGiderBox.get(key);
+        if (item['projectKey'] == widget.projectKey) {
+          try {
+            DateTime itemDate = DateTime.parse(item['date']);
+            allTransactions.add(TransactionData(
+              date: DateFormat('dd/MM/yyyy').format(itemDate),
+              type: item['type'],
+              category: item['category'] ??
+                  (item['type'] == 'gelir' ? 'Ödeme' : 'Diğer'),
+              description: item['description'] ?? item['category'] ?? '-',
+              amount: ((item['amount'] ?? 0.0) as num).toDouble(),
+              weekRange: DateHelper.getWeekRangeString(
+                  DateHelper.getWeekStart(itemDate)),
+            ));
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+
+      for (var key in mesaiBox.keys) {
+        var mesai = mesaiBox.get(key);
+        if (mesai['projectKey'] == widget.projectKey) {
+          var employeeKey = mesai['employeeKey'];
+          var employee = calisanBox.get(employeeKey);
+
+          if (employee != null && mesai['workDetails'] != null) {
+            List workDetails = mesai['workDetails'];
+
+            for (var detail in workDetails) {
+              try {
+                List<String> dateParts = detail['date'].split('/');
+                DateTime workDate = DateTime(
+                  int.parse(dateParts[2]),
+                  int.parse(dateParts[1]),
+                  int.parse(dateParts[0]),
+                );
+                String weekRange = DateHelper.getWeekRangeString(
+                    DateHelper.getWeekStart(workDate));
+                String empName = employee['name'] ?? 'İsimsiz';
+
+                employeeWorkData.add(EmployeeWorkData(
+                  employeeName: empName,
+                  workDays: 1,
+                  totalWage: ((detail['wage'] ?? 0.0) as num).toDouble(),
+                  weekRange: weekRange,
+                ));
+              } catch (e) {
+                // ignore
+              }
+            }
+          }
+        }
+      }
+
+      double totalNet =
+          totalPatronPayments - (totalEmployeeWages + totalExpenses);
+
+      // ✅ PDF oluştur
+      final pdf = await PDFHelper.generateWeeklyReport(
+        projectName: projectData!['name'] ?? 'Proje',
+        projectStartDate: projectData!['startDate'] ?? '-',
+        weeklyReports: pdfReports,
+        allTransactions: allTransactions,
+        employeeWorkData: employeeWorkData,
+        totalPatronPayments: totalPatronPayments,
+        totalEmployeeWages: totalEmployeeWages,
+        totalExpenses: totalExpenses,
+        totalNet: totalNet,
+      );
+
+      if (mounted) Navigator.pop(context);
+
+      // ✅ Sadece paylaş seçeneği (bu fonksiyon için)
+      await _showPDFActionsDialog(pdf, showDownload: false);
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulurken hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _generatePDF(List<WeeklyReport> reports,
+      {required bool showDownload}) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Colors.blue),
+        ),
+      );
+
+      double totalPatronPayments = 0;
+      double totalEmployeeWages = 0;
+      double totalExpenses = 0;
+
+      List<WeeklyReportData> pdfReports = [];
+      List<TransactionData> allTransactions = [];
+      List<EmployeeWorkData> employeeWorkData = [];
+
+      for (var report in reports) {
+        totalPatronPayments += report.patronPayments;
+        totalEmployeeWages += report.employeeWages;
+        totalExpenses += report.expenses;
+
+        String weekRange = DateHelper.getWeekRangeString(report.weekStart);
+
+        pdfReports.add(WeeklyReportData(
+          weekRange: weekRange,
+          patronPayments: report.patronPayments,
+          employeeWages: report.employeeWages,
+          expenses: report.expenses,
+          netBalance: report.netBalance,
+        ));
+
+        DateTime weekStart = report.weekStart;
+        DateTime weekEnd = report.weekEnd;
+
+        // Gelir/Gider işlemleri
+        for (var key in gelirGiderBox.keys) {
+          var item = gelirGiderBox.get(key);
+          if (item['projectKey'] == widget.projectKey) {
+            try {
+              DateTime itemDate = DateTime.parse(item['date']);
+              if (itemDate
+                      .isAfter(weekStart.subtract(const Duration(days: 1))) &&
+                  itemDate.isBefore(weekEnd.add(const Duration(days: 1)))) {
+                allTransactions.add(TransactionData(
+                  date: DateFormat('dd/MM/yyyy').format(itemDate),
+                  type: item['type'],
+                  category: item['category'] ??
+                      (item['type'] == 'gelir' ? 'Ödeme' : 'Diğer'),
+                  description: item['description'] ?? item['category'] ?? '-',
+                  amount: ((item['amount'] ?? 0.0) as num).toDouble(),
+                  weekRange: weekRange,
+                ));
+              }
+            } catch (e) {
+              // Tarih parse hatası
+            }
+          }
+        }
+
+        // Çalışan mesai verileri
+        Map<String, EmployeeWorkSummary> employeeSummary = {};
+
+        for (var key in mesaiBox.keys) {
+          var mesai = mesaiBox.get(key);
+          if (mesai['projectKey'] == widget.projectKey) {
+            var employeeKey = mesai['employeeKey'];
+            var employee = calisanBox.get(employeeKey);
+
+            if (employee != null && mesai['workDetails'] != null) {
+              List workDetails = mesai['workDetails'];
+
+              for (var detail in workDetails) {
+                try {
+                  List<String> dateParts = detail['date'].split('/');
+                  DateTime workDate = DateTime(
+                    int.parse(dateParts[2]),
+                    int.parse(dateParts[1]),
+                    int.parse(dateParts[0]),
+                  );
+
+                  if (workDate.isAfter(
+                          weekStart.subtract(const Duration(days: 1))) &&
+                      workDate.isBefore(weekEnd.add(const Duration(days: 1)))) {
+                    String empName = employee['name'] ?? 'İsimsiz';
+
+                    if (!employeeSummary.containsKey(empName)) {
+                      employeeSummary[empName] = EmployeeWorkSummary(
+                        employeeName: empName,
+                        workDays: 0,
+                        totalWage: 0,
+                      );
+                    }
+
+                    employeeSummary[empName]!.workDays++;
+                    employeeSummary[empName]!.totalWage +=
+                        ((detail['wage'] ?? 0.0) as num).toDouble();
+                  }
+                } catch (e) {
+                  // Tarih parse hatası
+                }
+              }
+            }
+          }
+        }
+
+        employeeSummary.forEach((name, summary) {
+          employeeWorkData.add(EmployeeWorkData(
+            employeeName: summary.employeeName,
+            workDays: summary.workDays,
+            totalWage: summary.totalWage,
+            weekRange: weekRange,
+          ));
+        });
+      }
+
+      double totalNet =
+          totalPatronPayments - (totalEmployeeWages + totalExpenses);
+
+      final pdf = await PDFHelper.generateWeeklyReport(
+        projectName: projectData!['name'] ?? 'Proje',
+        projectStartDate: projectData!['startDate'] ?? '-',
+        weeklyReports: pdfReports,
+        allTransactions: allTransactions,
+        employeeWorkData: employeeWorkData,
+        totalPatronPayments: totalPatronPayments,
+        totalEmployeeWages: totalEmployeeWages,
+        totalExpenses: totalExpenses,
+        totalNet: totalNet,
+      );
+
+      if (mounted) Navigator.pop(context);
+      await _showPDFActionsDialog(pdf, showDownload: showDownload);
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulurken hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showPDFActionsDialog(pw.Document pdf,
+      {required bool showDownload}) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: Row(
+          children: [
+            Icon(
+              showDownload ? Icons.download : Icons.share,
+              color: Colors.blue,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                showDownload ? 'PDF İndir' : 'PDF Paylaş',
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          showDownload
+              ? 'PDF dosyasını cihazınıza indirmek veya önizlemek istersiniz?'
+              : 'PDF dosyasını paylaşmak veya önizlemek istersiniz?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
+          OutlinedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              await PDFHelper.previewPDF(pdf);
+            },
+            icon: const Icon(Icons.visibility, size: 18),
+            label: const Text('Önizle'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.blue,
+              side: const BorderSide(color: Colors.blue),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              String fileName =
+                  'Haftalik_Rapor_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+              if (showDownload) {
+                // İndir
+                final file = await PDFHelper.savePDF(pdf, fileName);
+                if (context.mounted && file != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('PDF indirildi: ${file.path}'),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+              } else {
+                // Paylaş
+                await PDFHelper.sharePDF(pdf, fileName);
+              }
+            },
+            icon: Icon(showDownload ? Icons.download : Icons.share, size: 18),
+            label: Text(showDownload ? 'İndir' : 'Paylaş'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
