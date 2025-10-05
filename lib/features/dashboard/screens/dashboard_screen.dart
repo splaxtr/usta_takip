@@ -6,6 +6,7 @@ import '../../projects/screens/projects_list_screen.dart';
 import '../../employees/screens/employees_list_screen.dart';
 import '../../patrons/screens/patrons_list_screen.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/number_formatter.dart';
 
 class DashboardScreen extends StatelessWidget {
   final Box userBox = Hive.box('user');
@@ -73,26 +74,33 @@ class DashboardScreen extends StatelessWidget {
                                     .length;
 
                                 // Net Bakiye - gelir/gider
-                                double totalIncome = 0;
-                                double totalExpense = 0;
+                                double totalIncome = 0.0;
+                                double totalExpense = 0.0;
 
+                                // Gelir/Gider hesapla
                                 for (var item in gelirGiderBox.values) {
                                   if (item['type'] == 'gelir' ||
                                       item['type'] == 'income') {
-                                    totalIncome += (item['amount'] ?? 0.0);
+                                    totalIncome +=
+                                        ((item['amount'] ?? 0.0) as num)
+                                            .toDouble();
                                   } else if (item['type'] == 'gider' ||
                                       item['type'] == 'expense') {
-                                    totalExpense += (item['amount'] ?? 0.0);
+                                    totalExpense +=
+                                        ((item['amount'] ?? 0.0) as num)
+                                            .toDouble();
                                   }
                                 }
 
-                                // Çalışan ödemelerini de gider olarak ekle
+                                // ✅ Çalışan maaşlarını da gidere ekle
                                 for (var mesai in mesaiBox.values) {
-                                  if (mesai['payments'] != null) {
-                                    List payments = mesai['payments'];
-                                    for (var payment in payments) {
+                                  if (mesai['isPaid'] == true &&
+                                      mesai['workDetails'] != null) {
+                                    List workDetails = mesai['workDetails'];
+                                    for (var detail in workDetails) {
                                       totalExpense +=
-                                          (payment['amount'] ?? 0.0);
+                                          ((detail['wage'] ?? 0.0) as num)
+                                              .toDouble();
                                     }
                                   }
                                 }
@@ -125,8 +133,8 @@ class DashboardScreen extends StatelessWidget {
                                     ),
                                     _buildSummaryCard(
                                       title: "Net Bakiye",
-                                      value:
-                                          "${netBalance.toStringAsFixed(2)}₺",
+                                      value: NumberFormatter.formatCurrency(
+                                          netBalance),
                                       subtitle:
                                           netBalance >= 0 ? "Kazanç" : "Zarar",
                                       icon: Icons.account_balance_wallet,
@@ -499,7 +507,10 @@ class DashboardScreen extends StatelessWidget {
                           size: 14, color: Colors.green[300]),
                       const SizedBox(width: 4),
                       Text(
-                        "${(project['income'] ?? 0).toStringAsFixed(0)}₺",
+                        NumberFormatter.formatCurrency(double.tryParse(
+                                    project['income']?.toString() ?? '0') ??
+                                0.0 // ✅ Güvenli parse
+                            ),
                         style: TextStyle(
                           color: Colors.green[300],
                           fontSize: 12,
@@ -510,7 +521,10 @@ class DashboardScreen extends StatelessWidget {
                           size: 14, color: Colors.red[300]),
                       const SizedBox(width: 4),
                       Text(
-                        "${(project['expenses'] ?? 0).toStringAsFixed(0)}₺",
+                        NumberFormatter.formatCurrency(double.tryParse(
+                                    project['expenses']?.toString() ?? '0') ??
+                                0.0 // ✅ Güvenli parse
+                            ),
                         style: TextStyle(
                           color: Colors.red[300],
                           fontSize: 12,

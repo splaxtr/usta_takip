@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../core/utils/pdf_helper.dart';
 import '../../../core/utils/date_helper.dart';
+import '../../../core/utils/number_formatter.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final int projectKey;
@@ -271,14 +272,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Expanded(
                 child: _buildSummaryItem(
                   'Gelir',
-                  '${totalIncome.toStringAsFixed(0)}₺',
+                  NumberFormatter.formatCurrency(totalIncome),
                   Colors.green.shade300,
                 ),
               ),
               Expanded(
                 child: _buildSummaryItem(
                   'Gider',
-                  '${totalExpenses.toStringAsFixed(0)}₺',
+                  NumberFormatter.formatCurrency(totalExpenses),
                   Colors.red.shade300,
                 ),
               ),
@@ -1438,18 +1439,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildPaymentSummaryColumn(
-                  'Gelir', totalIncome, Colors.green.shade300),
-              Container(width: 1, height: 40, color: Colors.white30),
+                  'Gelir',
+                  totalIncome, // double gönder
+                  Colors.green.shade300),
               _buildPaymentSummaryColumn(
-                  'Gider', totalExpenses, Colors.red.shade300),
-              Container(width: 1, height: 40, color: Colors.white30),
+                  'Gider',
+                  totalExpenses, // double gönder
+                  Colors.red.shade300),
               _buildPaymentSummaryColumn(
-                'Kalan',
-                totalIncome - totalExpenses,
-                (totalIncome - totalExpenses) >= 0
-                    ? Colors.white
-                    : Colors.orange.shade300,
-              ),
+                  'Net',
+                  totalIncome - totalExpenses,
+                  totalIncome - totalExpenses >= 0
+                      ? Colors.blue.shade300
+                      : Colors.red.shade300),
             ],
           ),
           if (expensesByCategory.isNotEmpty) ...[
@@ -1497,21 +1499,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   Widget _buildPaymentSummaryColumn(String label, double value, Color color) {
     return Column(
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 12,
-          ),
-        ),
+        Text(label,
+            style:
+                TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
         const SizedBox(height: 4),
         Text(
-          '${value.toStringAsFixed(0)}₺',
+          NumberFormatter.formatCurrency(value), // ✅ Burada formatla
           style: TextStyle(
-            color: color,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+              color: color, fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -2286,7 +2281,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     for (var key in calisanBox.keys) {
       if (!existingEmployees.contains(key)) {
         selectedEmployees[key] = false;
-        wageControllers[key] = TextEditingController(text: '500');
+        wageControllers[key] = TextEditingController(text: '2500');
       }
     }
 
