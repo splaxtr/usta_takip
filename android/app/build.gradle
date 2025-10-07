@@ -62,21 +62,20 @@ android {
             keyPassword 'android'
         }
         
-        // Release signing (TODO: Yapılandırın)
-        /*
         release {
             def keystorePropertiesFile = rootProject.file('key.properties')
             if (keystorePropertiesFile.exists()) {
                 def keystoreProperties = new Properties()
                 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-                
+
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
+            } else {
+                throw new GradleException("key.properties bulunamadı!")
             }
         }
-        */
     }
 
     buildTypes {
@@ -88,7 +87,7 @@ android {
             shrinkResources false
         }
         release {
-            // signingConfig signingConfigs.debug // TODO: Release signing kullanın
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -137,8 +136,7 @@ dependencies {
  * ============================================================================
  * 
  * 1. Keystore oluşturun:
- *    keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA 
- *      -keysize 2048 -validity 10000 -alias upload
+ *    keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
  * 
  * 2. key.properties dosyası oluşturun (android/key.properties):
  *    storePassword=<keystore şifreniz>
