@@ -1,370 +1,282 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../data/models/patron_model.dart';
-import '../../../data/services/hive_service.dart';
-import '../widgets/patron_card.dart';
-import 'add_patron_screen.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-/// Patronlar (İşverenler) listesi ekranı
-class PatronsListScreen extends StatefulWidget {
-  const PatronsListScreen({super.key});
+class PatronsListScreen extends StatelessWidget {
+  final Box patronBox = Hive.box('patronlar');
 
-  static const String routeName = '/patrons';
-
-  @override
-  State<PatronsListScreen> createState() => _PatronsListScreenState();
-}
-
-class _PatronsListScreenState extends State<PatronsListScreen> {
-  List<PatronModel> _patrons = [];
-  List<PatronModel> _filteredPatrons = [];
-  final TextEditingController _searchController = TextEditingController();
-  PatronType? _selectedType;
-  bool _showOnlyActive = true;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPatrons();
-    _searchController.addListener(_filterPatrons);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadPatrons() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final patrons = HiveService.getPatrons();
-
-    setState(() {
-      _patrons = patrons;
-      _filteredPatrons = patrons;
-      _isLoading = false;
-    });
-
-    _filterPatrons();
-  }
-
-  void _filterPatrons() {
-    final query = _searchController.text.toLowerCase();
-
-    setState(() {
-      _filteredPatrons = _patrons.where((patron) {
-        // Arama filtresi
-        final matchesSearch =
-            patron.displayName.toLowerCase().contains(query) ||
-                patron.phone.contains(query) ||
-                (patron.email?.toLowerCase().contains(query) ?? false) ||
-                (patron.taxNumber?.contains(query) ?? false);
-
-        // Tip filtresi
-        final matchesType =
-            _selectedType == null || patron.type == _selectedType;
-
-        // Aktiflik filtresi
-        final matchesActive = !_showOnlyActive || patron.isActive;
-
-        return matchesSearch && matchesType && matchesActive;
-      }).toList();
-    });
-  }
-
-  void _onTypeFilterChanged(PatronType? type) {
-    setState(() {
-      _selectedType = type;
-      _filterPatrons();
-    });
-  }
-
-  void _toggleActiveFilter() {
-    setState(() {
-      _showOnlyActive = !_showOnlyActive;
-      _filterPatrons();
-    });
-  }
-
-  Future<void> _navigateToAddPatron() async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AddPatronScreen(),
-      ),
-    );
-
-    if (result == true) {
-      _loadPatrons();
-    }
-  }
-
-  Future<void> _navigateToPatronDetail(PatronModel patron) async {
-    // TODO: Detay ekranı oluşturulduğunda aktif edilecek
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${patron.displayName} detayı'),
-      ),
-    );
-  }
+  PatronsListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF101922),
       appBar: AppBar(
-        title: const Text('Patronlar / İşverenler'),
-        actions: [
-          // Aktif/Tümü toggle
-          IconButton(
-            icon: Icon(
-              _showOnlyActive ? Icons.filter_alt : Icons.filter_alt_off,
-              color:
-                  _showOnlyActive ? AppColors.primary : AppColors.textSecondary,
-            ),
-            onPressed: _toggleActiveFilter,
-            tooltip: _showOnlyActive ? 'Tümünü Göster' : 'Sadece Aktifler',
+        backgroundColor: const Color(0xFF101922),
+        elevation: 0,
+        title: const Text(
+          'İş Verenler (Patronlar)',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
-          // Patron sayısı
-          if (_patrons.isNotEmpty)
-            Center(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppSizes.paddingMd),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.paddingSm,
-                    vertical: AppSizes.paddingXs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusFull),
-                  ),
-                  child: Text(
-                    '${_patrons.where((p) => p.isActive).length} Aktif',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: AppSizes.fontSm,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+        ),
+        centerTitle: true,
+      ),
+      body: ValueListenableBuilder(
+        valueListenable: patronBox.listenable(),
+        builder: (context, Box box, _) {
+          if (box.isEmpty) {
+            return _buildEmptyState(context);
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: box.length,
+            itemBuilder: (context, index) {
+              var patron = box.getAt(index);
+              return _buildPatronCard(context, patron, index);
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddPatronDialog(context),
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildPatronCard(BuildContext context, dynamic patron, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Colors.blue.withOpacity(0.2),
+            child: Text(
+              (patron['name'] ?? 'P')[0].toUpperCase(),
+              style: const TextStyle(
+                color: Colors.blue,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Arama ve filtre
-          Container(
-            padding: const EdgeInsets.all(AppSizes.paddingMd),
-            color: AppColors.surface,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Arama çubuğu
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'İsim, telefon, email veya vergi no ara...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                            },
-                          )
-                        : null,
+                Text(
+                  patron['name'] ?? 'İsimsiz Patron',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-
-                const SizedBox(height: AppSizes.spaceSm),
-
-                // Tip filtreleri
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip('Tümü', null),
-                      const SizedBox(width: AppSizes.spaceSm),
-                      _buildFilterChip('Şahıs', PatronType.individual),
-                      const SizedBox(width: AppSizes.spaceSm),
-                      _buildFilterChip('Şirket', PatronType.company),
-                    ],
+                if (patron['company'] != null && patron['company'].isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      patron['company'],
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                ),
+                if (patron['phone'] != null && patron['phone'].isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        Icon(Icons.phone, size: 14, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          patron['phone'],
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
-
-          // İstatistikler
-          if (_patrons.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.paddingMd,
-                vertical: AppSizes.paddingSm,
-              ),
-              color: AppColors.background,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatItem(
-                    icon: Icons.business,
-                    label: 'Şirket',
-                    value: _patrons
-                        .where((p) => p.type == PatronType.company)
-                        .length
-                        .toString(),
-                    color: AppColors.primary,
-                  ),
-                  _buildStatItem(
-                    icon: Icons.person,
-                    label: 'Şahıs',
-                    value: _patrons
-                        .where((p) => p.type == PatronType.individual)
-                        .length
-                        .toString(),
-                    color: AppColors.secondary,
-                  ),
-                  _buildStatItem(
-                    icon: Icons.work_outline,
-                    label: 'Proje',
-                    value: _patrons
-                        .fold<int>(0, (sum, p) => sum + p.projectIds.length)
-                        .toString(),
-                    color: AppColors.success,
-                  ),
-                ],
-              ),
-            ),
-
-          // Liste
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredPatrons.isEmpty
-                    ? _buildEmptyState()
-                    : RefreshIndicator(
-                        onRefresh: _loadPatrons,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(AppSizes.paddingMd),
-                          itemCount: _filteredPatrons.length,
-                          itemBuilder: (context, index) {
-                            final patron = _filteredPatrons[index];
-                            return PatronCard(
-                              patron: patron,
-                              onTap: () => _navigateToPatronDetail(patron),
-                            );
-                          },
-                        ),
-                      ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () =>
+                _showDeleteDialog(context, index), // Artık context var
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToAddPatron,
-        icon: const Icon(Icons.add),
-        label: const Text('Patron Ekle'),
-      ),
     );
   }
 
-  Widget _buildFilterChip(String label, PatronType? type) {
-    final isSelected = _selectedType == type;
-
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        _onTypeFilterChanged(selected ? type : null);
-      },
-      backgroundColor: AppColors.surface,
-      selectedColor: AppColors.primary.withOpacity(0.2),
-      checkmarkColor: AppColors.primary,
-      labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textSecondary,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-    );
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: AppSizes.iconMd),
-        const SizedBox(height: AppSizes.spaceXs),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: AppSizes.fontLg,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: AppSizes.fontXs,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    final hasSearchQuery = _searchController.text.isNotEmpty;
-
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSizes.paddingXl),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              hasSearchQuery ? Icons.search_off : Icons.person_add_outlined,
+              Icons.business_center,
               size: 80,
-              color: AppColors.textTertiary,
+              color: Colors.grey[600],
             ),
-            const SizedBox(height: AppSizes.spaceMd),
+            const SizedBox(height: 16),
             Text(
-              hasSearchQuery ? 'Sonuç bulunamadı' : 'Henüz patron kaydı yok',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              'Henüz patron eklenmemiş',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: AppSizes.spaceSm),
+            const SizedBox(height: 8),
             Text(
-              hasSearchQuery
-                  ? 'Farklı bir arama terimi deneyin'
-                  : 'İlk işvereni ekleyerek başlayın',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
+              'Yeni patron eklemek için + butonuna tıklayın',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 12,
+              ),
               textAlign: TextAlign.center,
             ),
-            if (!hasSearchQuery) ...[
-              const SizedBox(height: AppSizes.spaceLg),
-              ElevatedButton.icon(
-                onPressed: _navigateToAddPatron,
-                icon: const Icon(Icons.add),
-                label: const Text('İlk Patronu Ekle'),
-              ),
-            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _showAddPatronDialog(BuildContext context) async {
+    final nameController = TextEditingController();
+    final companyController = TextEditingController();
+    final phoneController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'Yeni Patron Ekle',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Ad Soyad *',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                  filled: true,
+                  fillColor: const Color(0xFF101922),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: companyController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Şirket (Opsiyonel)',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.business, color: Colors.blue),
+                  filled: true,
+                  fillColor: const Color(0xFF101922),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneController,
+                style: const TextStyle(color: Colors.white),
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Telefon (Opsiyonel)',
+                  labelStyle: TextStyle(color: Colors.grey[400]),
+                  prefixIcon: const Icon(Icons.phone, color: Colors.blue),
+                  filled: true,
+                  fillColor: const Color(0xFF101922),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('İptal', style: TextStyle(color: Colors.grey[400])),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.trim().isNotEmpty) {
+                await patronBox.add({
+                  'name': nameController.text.trim(),
+                  'company': companyController.text.trim(),
+                  'phone': phoneController.text.trim(),
+                  'createdAt': DateTime.now().toString(),
+                });
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            child: const Text('Kaydet', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDeleteDialog(BuildContext context, int index) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('Patronu Sil', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Bu patronu silmek istediğinizden emin misiniz?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await patronBox.deleteAt(index);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Sil', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
