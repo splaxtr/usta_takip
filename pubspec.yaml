@@ -91,7 +91,7 @@ dependencies:
   email_validator: ^3.0.0  # Email validasyon
   
   # Notifications
-  flutter_local_notifications: ^19.4.2  # Local bildirimler
+  # flutter_local_notifications: ^19.4.2  # Local bildirimler
   
   # Error Tracking & Analytics
   # firebase_crashlytics: ^3.4.9  # Crash raporlama

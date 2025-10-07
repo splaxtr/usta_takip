@@ -26,8 +26,9 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace "com.vurthex.usta_takip" // TODO: Kendi paket adınızla değiştirin
+    namespace "com.vurthex.usta_takip"
     compileSdk 36
+    ndkVersion "27.0.12077973"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -36,7 +37,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 
     sourceSets {
@@ -44,17 +45,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Kendi uygulama ID'nizi belirleyin
         applicationId "com.vurthex.usta_takip"
-        
-        ndkVersion "27.0.12077973"
 
         minSdkVersion flutter.minSdkVersion
         targetSdk 36
-        
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        
         multiDexEnabled true
     }
 
@@ -91,14 +87,12 @@ android {
             minifyEnabled false
             shrinkResources false
         }
-        /*
         release {
-            signingConfig signingConfigs.debug // TODO: Release signing kullanın
+            // signingConfig signingConfigs.debug // TODO: Release signing kullanın
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        */
     }
 
     lint {
@@ -119,8 +113,8 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.1"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.3"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.multidex:multidex:2.0.1'
