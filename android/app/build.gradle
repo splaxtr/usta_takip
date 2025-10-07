@@ -28,12 +28,11 @@ if (flutterVersionName == null) {
 android {
     namespace "com.vurthex.usta_takip" // TODO: Kendi paket adınızla değiştirin
     compileSdk 36
-    ndkVersion "27.0.12077973"
-    coreLibraryDesugaringEnabled true
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
@@ -48,9 +47,10 @@ android {
         // TODO: Kendi uygulama ID'nizi belirleyin
         applicationId "com.vurthex.usta_takip"
         
+        ndkVersion "27.0.12077973"
+
         minSdkVersion flutter.minSdkVersion
         targetSdk 36
-        minSdkVersion 21
         
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -91,13 +91,14 @@ android {
             minifyEnabled false
             shrinkResources false
         }
-        
+        /*
         release {
             signingConfig signingConfigs.debug // TODO: Release signing kullanın
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        */
     }
 
     lint {
