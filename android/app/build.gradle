@@ -1,0 +1,162 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // Firebase kullanacaksanız yorumu kaldırın:
+    // id 'com.google.gms.google-services'
+    // id 'com.google.firebase.crashlytics'
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+android {
+    namespace "com.vurthex.usta_takip" // TODO: Kendi paket adınızla değiştirin
+    compileSdk 34
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+
+    defaultConfig {
+        // TODO: Kendi uygulama ID'nizi belirleyin
+        applicationId "com.vurthex.usta_takip"
+        
+        minSdkVersion flutter.minSdkVersion
+        targetSdk 34
+        
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        
+        multiDexEnabled true
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        
+        // Release signing (TODO: Yapılandırın)
+        /*
+        release {
+            def keystorePropertiesFile = rootProject.file('key.properties')
+            if (keystorePropertiesFile.exists()) {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+        */
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            applicationIdSuffix ".debug"
+            debuggable true
+            minifyEnabled false
+            shrinkResources false
+        }
+        
+        release {
+            signingConfig signingConfigs.debug // TODO: Release signing kullanın
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    lint {
+        disable 'InvalidPackage'
+        checkReleaseBuilds false
+    }
+
+    packagingOptions {
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+    }
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    
+    // Firebase bağımlılıkları (kullanacaksanız yorumu kaldırın)
+    /*
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
+    implementation 'com.google.firebase:firebase-storage-ktx'
+    */
+}
+
+/*
+ * ============================================================================
+ * RELEASE BUILD İÇİN ADIMLAR
+ * ============================================================================
+ * 
+ * 1. Keystore oluşturun:
+ *    keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA 
+ *      -keysize 2048 -validity 10000 -alias upload
+ * 
+ * 2. key.properties dosyası oluşturun (android/key.properties):
+ *    storePassword=<keystore şifreniz>
+ *    keyPassword=<key şifreniz>
+ *    keyAlias=upload
+ *    storeFile=<keystore dosya yolu>
+ * 
+ * 3. .gitignore'a ekleyin:
+ *    key.properties
+ *    *.jks
+ *    *.keystore
+ * 
+ * 4. Release signing yapılandırmasını yukarıda etkinleştirin
+ * 
+ * 5. Release build:
+ *    flutter build apk --release
+ *    flutter build appbundle --release
+ * 
+ * ============================================================================
+ */

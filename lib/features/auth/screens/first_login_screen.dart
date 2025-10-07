@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../dashboard/screens/dashboard_screen.dart';
+import '../../../core/constants/app_sizes.dart';
+import '../../../core/constants/app_strings.dart';
+import '../widgets/name_input_field.dart';
 
+/// İlk giriş ekranı - Kullanıcıdan adını alır
+///
+/// Bu ekran uygulamaya ilk kez giriş yapan kullanıcılar için gösterilir.
+/// Kullanıcı adını girdikten sonra ana ekrana yönlendirilir.
 class FirstLoginScreen extends StatefulWidget {
   const FirstLoginScreen({super.key});
+
+  static const String routeName = '/first-login';
 
   @override
   State<FirstLoginScreen> createState() => _FirstLoginScreenState();
@@ -13,129 +20,181 @@ class FirstLoginScreen extends StatefulWidget {
 class _FirstLoginScreenState extends State<FirstLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _surnameController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _surnameController.dispose();
     super.dispose();
   }
 
   Future<void> _handleContinue() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-      // Kullanıcı adını Hive'a kaydet
-      final userBox = Hive.box('user');
-      await userBox.put('fullName', _nameController.text.trim());
+    setState(() {
+      _isLoading = true;
+    });
 
-      // Dashboard'a yönlendir
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => DashboardScreen(),
-          ),
-        );
-      }
+    // Burada kullanıcı bilgilerini kaydet
+    final name = _nameController.text.trim();
+    final surname = _surnameController.text.trim();
+
+    // TODO: Kullanıcı modelini oluştur ve Hive'a kaydet
+    // final user = UserModel(
+    //   id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+    //   name: name,
+    //   surname: surname,
+    //   email: '',
+    //   role: UserRole.admin,
+    //   createdAt: DateTime.now(),
+    // );
+    // await HiveService.addUser(user);
+
+    // Simülasyon için kısa bir gecikme
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (mounted) {
+      // Ana ekrana yönlendir
+      Navigator.of(context).pushReplacementNamed('/home');
+      // veya
+      // Navigator.of(context).pushReplacement(
+      //   MaterialPageRoute(builder: (context) => const HomeScreen()),
+      // );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.screenPaddingH,
+            vertical: AppSizes.screenPaddingV,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Logo veya başlık alanı
+                const SizedBox(height: AppSizes.spaceXxxl),
+
+                // Logo veya İkon
                 Icon(
-                  Icons.engineering,
-                  size: 80,
+                  Icons.account_circle_outlined,
+                  size: 120,
                   color: AppColors.primary,
                 ),
-                const SizedBox(height: 24),
+
+                const SizedBox(height: AppSizes.spaceXl),
 
                 // Hoş geldiniz metni
                 Text(
-                  'Usta Takip\'e Hoş Geldiniz',
-                  style: Theme.of(context).textTheme.displaySmall,
+                  'Hoş Geldiniz!',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: AppSizes.spaceSm),
 
                 Text(
-                  'Başlamak için adınızı ve soyadınızı girin',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  'Başlamak için lütfen bilgilerinizi girin',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 48),
 
-                // Ad Soyad girişi
-                TextFormField(
+                const SizedBox(height: AppSizes.spaceXl),
+
+                // Ad input
+                NameInputField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ad Soyad',
-                    hintText: 'Örn: Mehmet Erdem',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Lütfen adınızı ve soyadınızı girin';
-                    }
-                    if (value.trim().split(' ').length < 2) {
-                      return 'Lütfen ad ve soyadınızı girin';
-                    }
-                    return null;
-                  },
-                  onFieldSubmitted: (_) => _handleContinue(),
-                ),
-                const SizedBox(height: 32),
-
-                // Devam butonu
-                SizedBox(
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleContinue,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Devam Et'),
-                  ),
+                  label: 'Ad',
+                  hint: 'Adınızı girin',
+                  icon: Icons.person_outline,
+                  enabled: !_isLoading,
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSizes.spaceMd),
 
-                // Bilgi notu
+                // Soyad input
+                NameInputField(
+                  controller: _surnameController,
+                  label: 'Soyad',
+                  hint: 'Soyadınızı girin',
+                  icon: Icons.person_outline,
+                  enabled: !_isLoading,
+                ),
+
+                const SizedBox(height: AppSizes.spaceXl),
+
+                // Devam et butonu
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _handleContinue,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(
+                      double.infinity,
+                      AppSizes.buttonHeightLg,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Devam Et',
+                          style: TextStyle(
+                            fontSize: AppSizes.fontLg,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+
+                const SizedBox(height: AppSizes.spaceLg),
+
+                // Bilgi metni
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSizes.paddingMd),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceDark,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.divider),
+                    color: AppColors.info.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    border: Border.all(
+                      color: AppColors.info.withOpacity(0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.info_outline,
                         color: AppColors.info,
-                        size: 20,
+                        size: AppSizes.iconSm,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSizes.spaceSm),
                       Expanded(
                         child: Text(
-                          'Bu bilgi sadece sizi karşılamak için kullanılacak',
+                          'Bu bilgiler uygulama içinde kullanılacaktır. İstediğiniz zaman ayarlardan değiştirebilirsiniz.',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppColors.textSecondary,
