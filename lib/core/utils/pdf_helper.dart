@@ -355,7 +355,7 @@ class PDFHelper {
                   _buildTableCell('%${percentage.toStringAsFixed(1)}', font),
                 ],
               );
-            }).toList(),
+            }),
           ],
         ),
       ],
@@ -549,7 +549,7 @@ class PDFHelper {
               ],
             ),
           );
-        }).toList(),
+        }),
         if (weekTransactions.length > 5)
           pw.Text(
             '... ve ${weekTransactions.length - 5} işlem daha',
@@ -601,7 +601,7 @@ class PDFHelper {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }

@@ -207,7 +207,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.blue.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -223,7 +223,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 height: 60,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   image: projectData!['imageUrl'] != null
                       ? DecorationImage(
                           image: NetworkImage(projectData!['imageUrl']),
@@ -253,7 +253,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                     Text(
                       'Başlangıç: ${projectData!['startDate'] ?? '-'}',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,
                       ),
                     ),
@@ -264,7 +264,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.3),
+                  color: Colors.green.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -315,7 +315,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
           ),
         ),
@@ -428,7 +428,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E).withOpacity(0.5),
+            color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -436,7 +436,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: Colors.blue.withOpacity(0.2),
+                    backgroundColor: Colors.blue.withValues(alpha: 0.2),
                     child: Text(
                       (employee['name'] ?? 'A')[0].toUpperCase(),
                       style: const TextStyle(
@@ -601,9 +601,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -635,9 +635,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -815,7 +815,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -879,7 +879,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                     decoration: BoxDecoration(
                       color: const Color(0xFF101922),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -1078,7 +1078,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : const Color(0xFF101922),
+          color: isSelected ? color.withValues(alpha: 0.2) : const Color(0xFF101922),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade800,
@@ -1203,7 +1203,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                       decoration: BoxDecoration(
                         color: const Color(0xFF101922),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: color.withOpacity(0.3)),
+                        border: Border.all(color: color.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -1211,7 +1211,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: color.withOpacity(0.2),
+                              color: color.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(icon, color: color, size: 20),
@@ -1237,7 +1237,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: color.withOpacity(0.2),
+                                        color: color.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
@@ -1496,7 +1496,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -1531,7 +1531,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       children: [
         Text(label,
             style:
-                TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
         const SizedBox(height: 4),
         Text(
           NumberFormatter.formatCurrency(value), // ✅ Burada formatla
@@ -1586,12 +1586,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E1E).withOpacity(0.5),
+            color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isIncome
-                  ? Colors.green.withOpacity(0.3)
-                  : Colors.red.withOpacity(0.3),
+                  ? Colors.green.withValues(alpha: 0.3)
+                  : Colors.red.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -1604,8 +1604,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                     height: 48,
                     decoration: BoxDecoration(
                       color: isIncome
-                          ? Colors.green.withOpacity(0.2)
-                          : Colors.red.withOpacity(0.2),
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : Colors.red.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -1650,8 +1650,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                               ),
                               decoration: BoxDecoration(
                                 color: isIncome
-                                    ? Colors.green.withOpacity(0.2)
-                                    : Colors.red.withOpacity(0.2),
+                                    ? Colors.green.withValues(alpha: 0.2)
+                                    : Colors.red.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -1809,7 +1809,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         boxShadow: [
           BoxShadow(
             color: (remainingDebt > 0 ? Colors.orange : Colors.green)
-                .withOpacity(0.3),
+                .withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -1843,7 +1843,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1890,7 +1890,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 11,
             ),
             textAlign: TextAlign.center,
@@ -1979,12 +1979,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E).withOpacity(0.5),
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isPaid
-              ? Colors.green.withOpacity(0.5)
-              : Colors.orange.withOpacity(0.5),
+              ? Colors.green.withValues(alpha: 0.5)
+              : Colors.orange.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
@@ -1996,8 +1996,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               CircleAvatar(
                 radius: 30,
                 backgroundColor: isPaid
-                    ? Colors.green.withOpacity(0.2)
-                    : Colors.orange.withOpacity(0.2),
+                    ? Colors.green.withValues(alpha: 0.2)
+                    : Colors.orange.withValues(alpha: 0.2),
                 child: isPaid
                     ? const Icon(Icons.check_circle,
                         color: Colors.green, size: 30)
@@ -2034,7 +2034,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.2),
+                              color: Colors.green.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Row(
@@ -2084,8 +2084,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isPaid
-                  ? Colors.green.withOpacity(0.1)
-                  : Colors.orange.withOpacity(0.1),
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -2160,9 +2160,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -2194,7 +2194,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       margin: const EdgeInsets.symmetric(vertical: 32),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E).withOpacity(0.3),
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade800, width: 1),
       ),
@@ -2387,7 +2387,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                           const SizedBox(width: 8),
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor: Colors.blue.withOpacity(0.2),
+                            backgroundColor: Colors.blue.withValues(alpha: 0.2),
                             child: Text(
                               (employee['name'] ?? 'A')[0].toUpperCase(),
                               style: const TextStyle(
@@ -2544,9 +2544,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -2704,8 +2704,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isIncome
-                          ? Colors.green.withOpacity(0.3)
-                          : Colors.red.withOpacity(0.3),
+                          ? Colors.green.withValues(alpha: 0.3)
+                          : Colors.red.withValues(alpha: 0.3),
                     ),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -2882,8 +2882,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isIncome
-                          ? Colors.green.withOpacity(0.3)
-                          : Colors.red.withOpacity(0.3),
+                          ? Colors.green.withValues(alpha: 0.3)
+                          : Colors.red.withValues(alpha: 0.3),
                     ),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -3040,8 +3040,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isIncome
-                      ? Colors.green.withOpacity(0.3)
-                      : Colors.red.withOpacity(0.3),
+                      ? Colors.green.withValues(alpha: 0.3)
+                      : Colors.red.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -3149,9 +3149,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -3213,7 +3213,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                         const Icon(Icons.attach_money, color: Colors.green),
                     filled: true,
                     fillColor: payFull
-                        ? const Color(0xFF101922).withOpacity(0.5)
+                        ? const Color(0xFF101922).withValues(alpha: 0.5)
                         : const Color(0xFF101922),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -3386,7 +3386,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                         color: const Color(0xFF101922),
                         borderRadius: BorderRadius.circular(8),
                         border:
-                            Border.all(color: Colors.green.withOpacity(0.3)),
+                            Border.all(color: Colors.green.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -3394,7 +3394,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.2),
+                              color: Colors.green.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
@@ -3503,9 +3503,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -3600,13 +3600,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isCompleted
-                    ? Colors.orange.withOpacity(0.1)
-                    : Colors.green.withOpacity(0.1),
+                    ? Colors.orange.withValues(alpha: 0.1)
+                    : Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isCompleted
-                      ? Colors.orange.withOpacity(0.3)
-                      : Colors.green.withOpacity(0.3),
+                      ? Colors.orange.withValues(alpha: 0.3)
+                      : Colors.green.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -3704,6 +3704,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       }
     }
 
+    // ✅ ÖDENMİŞ maaşları da gidere ekle
+    for (var key in mesaiBox.keys) {
+      var mesai = mesaiBox.get(key);
+      if (mesai['projectKey'] == widget.projectKey) {
+        if (mesai['totalPaid'] != null && mesai['totalPaid'] > 0) {
+          totalExpenses += ((mesai['totalPaid'] ?? 0.0) as num).toDouble();
+        }
+      }
+    }
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -3747,9 +3757,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3784,9 +3794,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -3935,22 +3945,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       }
     }
 
-    // 3. Çalışan maaşlarını topla
+    // 3. ✅ Çalışan maaş ÖDEMELERİNİ topla (sadece ödenenler)
     for (var key in mesaiBox.keys) {
       var mesai = mesaiBox.get(key);
       if (mesai['projectKey'] == widget.projectKey) {
-        if (mesai['workDetails'] != null && mesai['workDetails'] is List) {
-          List workDetails = mesai['workDetails'];
-          for (var detail in workDetails) {
+        if (mesai['payments'] != null && mesai['payments'] is List) {
+          List payments = mesai['payments'];
+          for (var payment in payments) {
             try {
-              // Tarih formatı: "dd/MM/yyyy" -> DateTime'a çevir
-              List<String> dateParts = detail['date'].split('/');
-              DateTime date = DateTime(
-                int.parse(dateParts[2]),
-                int.parse(dateParts[1]),
-                int.parse(dateParts[0]),
-              );
-
+              // Ödeme tarihini parse et
+              DateTime date = DateTime.parse(payment['date']);
               DateTime weekStart = DateHelper.getWeekStart(date);
               String weekKey = weekStart.toIso8601String();
 
@@ -3969,7 +3973,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 weekEnd: weeklyData[weekKey]!.weekEnd,
                 patronPayments: weeklyData[weekKey]!.patronPayments,
                 employeeWages: weeklyData[weekKey]!.employeeWages +
-                    (detail['wage'] ?? 0.0),
+                    ((payment['amount'] ?? 0.0) as num).toDouble(),
                 expenses: weeklyData[weekKey]!.expenses,
               );
             } catch (e) {
@@ -3996,7 +4000,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E).withOpacity(0.3),
+          color: const Color(0xFF1E1E1E).withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -4050,9 +4054,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E).withOpacity(0.5),
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: netColor.withOpacity(0.3)),
+        border: Border.all(color: netColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4182,7 +4186,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.2),
+                  color: Colors.blue.withValues(alpha: 0.2),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -4310,7 +4314,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: (totalNet >= 0 ? Colors.green : Colors.red).withOpacity(0.3),
+            color: (totalNet >= 0 ? Colors.green : Colors.red).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -4321,7 +4325,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           Text(
             'Toplam ${reports.length} Hafta',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,
             ),
           ),
@@ -4352,7 +4356,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -4399,7 +4403,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             fontSize: 11,
           ),
         ),
@@ -4416,7 +4420,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       decoration: BoxDecoration(
         color: const Color(0xFF101922),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: netColor.withOpacity(0.3)),
+        border: Border.all(color: netColor.withValues(alpha: 0.3)),
       ),
       child: Theme(
         data: ThemeData(
@@ -4430,7 +4434,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           leading: CircleAvatar(
-            backgroundColor: netColor.withOpacity(0.2),
+            backgroundColor: netColor.withValues(alpha: 0.2),
             child: Text(
               '$weekNumber',
               style: TextStyle(
@@ -4461,7 +4465,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E).withOpacity(0.5),
+                color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -4534,127 +4538,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         ),
       ],
     );
-  }
-
-  Future<void> _generateAndSharePDF(List<WeeklyReport> reports) async {
-    try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(color: Colors.blue),
-        ),
-      );
-
-      double totalPatronPayments = 0;
-      double totalEmployeeWages = 0;
-      double totalExpenses = 0;
-
-      List<WeeklyReportData> pdfReports = [];
-      List<TransactionData> allTransactions = [];
-      List<EmployeeWorkData> employeeWorkData = [];
-
-      for (var report in reports) {
-        totalPatronPayments += report.patronPayments;
-        totalEmployeeWages += report.employeeWages;
-        totalExpenses += report.expenses;
-
-        pdfReports.add(WeeklyReportData(
-          weekRange: DateHelper.getWeekRangeString(report.weekStart),
-          patronPayments: report.patronPayments,
-          employeeWages: report.employeeWages,
-          expenses: report.expenses,
-          netBalance: report.netBalance,
-        ));
-      }
-
-      for (var key in gelirGiderBox.keys) {
-        var item = gelirGiderBox.get(key);
-        if (item['projectKey'] == widget.projectKey) {
-          try {
-            DateTime itemDate = DateTime.parse(item['date']);
-            allTransactions.add(TransactionData(
-              date: DateFormat('dd/MM/yyyy').format(itemDate),
-              type: item['type'],
-              category: item['category'] ??
-                  (item['type'] == 'gelir' ? 'Ödeme' : 'Diğer'),
-              description: item['description'] ?? item['category'] ?? '-',
-              amount: ((item['amount'] ?? 0.0) as num).toDouble(),
-              weekRange: DateHelper.getWeekRangeString(
-                  DateHelper.getWeekStart(itemDate)),
-            ));
-          } catch (e) {
-            // ignore
-          }
-        }
-      }
-
-      for (var key in mesaiBox.keys) {
-        var mesai = mesaiBox.get(key);
-        if (mesai['projectKey'] == widget.projectKey) {
-          var employeeKey = mesai['employeeKey'];
-          var employee = calisanBox.get(employeeKey);
-
-          if (employee != null && mesai['workDetails'] != null) {
-            List workDetails = mesai['workDetails'];
-
-            for (var detail in workDetails) {
-              try {
-                List<String> dateParts = detail['date'].split('/');
-                DateTime workDate = DateTime(
-                  int.parse(dateParts[2]),
-                  int.parse(dateParts[1]),
-                  int.parse(dateParts[0]),
-                );
-                String weekRange = DateHelper.getWeekRangeString(
-                    DateHelper.getWeekStart(workDate));
-                String empName = employee['name'] ?? 'İsimsiz';
-
-                employeeWorkData.add(EmployeeWorkData(
-                  employeeName: empName,
-                  workDays: 1,
-                  totalWage: ((detail['wage'] ?? 0.0) as num).toDouble(),
-                  weekRange: weekRange,
-                ));
-              } catch (e) {
-                // ignore
-              }
-            }
-          }
-        }
-      }
-
-      double totalNet =
-          totalPatronPayments - (totalEmployeeWages + totalExpenses);
-
-      // ✅ PDF oluştur
-      final pdf = await PDFHelper.generateWeeklyReport(
-        projectName: projectData!['name'] ?? 'Proje',
-        projectStartDate: projectData!['startDate'] ?? '-',
-        weeklyReports: pdfReports,
-        allTransactions: allTransactions,
-        employeeWorkData: employeeWorkData,
-        totalPatronPayments: totalPatronPayments,
-        totalEmployeeWages: totalEmployeeWages,
-        totalExpenses: totalExpenses,
-        totalNet: totalNet,
-      );
-
-      if (mounted) Navigator.pop(context);
-
-      // ✅ Sadece paylaş seçeneği (bu fonksiyon için)
-      await _showPDFActionsDialog(pdf, showDownload: false);
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF oluşturulurken hata: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _generatePDF(List<WeeklyReport> reports,

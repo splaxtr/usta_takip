@@ -44,6 +44,7 @@ class ProjectsListScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          final scaffold = ScaffoldMessenger.of(context);
           // Yeni proje ekleme ekranına git
           final result = await Navigator.push(
             context,
@@ -52,7 +53,7 @@ class ProjectsListScreen extends StatelessWidget {
 
           // ValueListenableBuilder otomatik yeniler ama bildirim göster
           if (result == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            scaffold.showSnackBar(
               const SnackBar(
                 content: Text('Proje başarıyla eklendi!'),
                 backgroundColor: Colors.green,
@@ -81,7 +82,7 @@ class ProjectsListScreen extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E).withOpacity(0.5),
+          color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(

@@ -53,14 +53,14 @@ class EmployeesListScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E).withOpacity(0.5),
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: Colors.green.withOpacity(0.2),
+            backgroundColor: Colors.green.withValues(alpha: 0.2),
             child: Text(
               (calisan['name'] ?? 'Ç')[0].toUpperCase(),
               style: const TextStyle(
@@ -108,7 +108,7 @@ class EmployeesListScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.2),
+                        color: Colors.blue.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(

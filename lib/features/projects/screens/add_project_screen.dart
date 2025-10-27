@@ -194,9 +194,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E).withOpacity(0.5),
+                  color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -246,7 +246,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E).withOpacity(0.5),
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextFormField(
@@ -277,7 +277,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E).withOpacity(0.5),
+          color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -318,11 +318,11 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E).withOpacity(0.5),
+        color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonFormField<String>(
-        value: _selectedPatronKey,
+        initialValue: _selectedPatronKey,
         decoration: const InputDecoration(
           labelText: 'İş Veren (Patron)',
           prefixIcon: Icon(Icons.business_center, color: Colors.blue),
@@ -342,7 +342,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
               value: key.toString(),
               child: Text(patron['name'] ?? 'İsimsiz Patron'),
             );
-          }).toList(),
+          }),
 
           // Yeni patron ekle seçeneği
           const DropdownMenuItem<String>(
@@ -374,7 +374,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     final companyController = TextEditingController();
     final phoneController = TextEditingController();
 
-    final result = await showDialog<bool>(
+    await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),

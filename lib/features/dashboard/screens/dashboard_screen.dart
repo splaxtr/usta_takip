@@ -193,7 +193,7 @@ class DashboardScreen extends StatelessWidget {
       bottomNavigationBar: Container(
         height: 80,
         decoration: BoxDecoration(
-          color: const Color(0xFF101922).withOpacity(0.9),
+          color: const Color(0xFF101922).withValues(alpha: 0.9),
           border: Border(top: BorderSide(color: Colors.grey.shade800)),
         ),
         child: Row(
@@ -259,13 +259,14 @@ class DashboardScreen extends StatelessWidget {
       // Floating Action Button
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          final scaffold = ScaffoldMessenger.of(context);
           final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddProjectScreen()),
           );
 
           if (result == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            scaffold.showSnackBar(
               const SnackBar(
                 content: Text('Proje başarıyla eklendi!'),
                 backgroundColor: Colors.green,
@@ -299,7 +300,7 @@ class DashboardScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -383,13 +384,11 @@ class DashboardScreen extends StatelessWidget {
                       }
                     }
 
+                    // ✅ Sadece ÖDENMİŞ maaşları gidere ekle
                     for (var mesai in mesaiBox.values) {
                       if (mesai is Map && mesai['projectKey'] == index) {
-                        if (mesai['workDetails'] != null) {
-                          List workDetails = mesai['workDetails'];
-                          for (var detail in workDetails) {
-                            projectExpenses += (detail['wage'] ?? 0.0);
-                          }
+                        if (mesai['totalPaid'] != null && mesai['totalPaid'] > 0) {
+                          projectExpenses += ((mesai['totalPaid'] ?? 0.0) as num).toDouble();
                         }
                       }
                     }
@@ -444,7 +443,7 @@ class DashboardScreen extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E).withOpacity(0.5),
+          color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
