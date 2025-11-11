@@ -56,6 +56,22 @@ class HiveWageRepository implements WageRepository {
   }
 
   @override
+  Future<List<WageEntry>> getArchived() async {
+    return _box.values
+        .where((entry) => entry.isArchived && !entry.isDeleted)
+        .map(_copyEntry)
+        .toList();
+  }
+
+  @override
+  Future<List<WageEntry>> getDeleted() async {
+    return _box.values
+        .where((entry) => entry.isDeleted)
+        .map(_copyEntry)
+        .toList();
+  }
+
+  @override
   Future<void> softDelete(String id) async {
     final entry = _box.get(id);
     if (entry != null) {
@@ -64,6 +80,11 @@ class HiveWageRepository implements WageRepository {
         ..deletedAt = DateTime.now();
       await entry.save();
     }
+  }
+
+  @override
+  Future<void> hardDelete(String id) async {
+    await _box.delete(id);
   }
 
   @override

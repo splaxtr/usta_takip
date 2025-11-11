@@ -10,5 +10,8 @@ abstract class ExpenseRepository {
   Future<void> add(Expense expense);
   Future<void> update(Expense expense);
   Future<void> softDelete(String id);
+  Future<void> hardDelete(String id);
+  Future<List<Expense>> getArchived();
+  Future<List<Expense>> getDeleted();
   Future<void> markPaid(String id);
 }

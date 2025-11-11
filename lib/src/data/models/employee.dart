@@ -49,4 +49,38 @@ class Employee extends HiveObject with TrackableEntity {
     updated.deletedAt = deletedAt ?? this.deletedAt;
     return updated;
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'dailyWage': dailyWage,
+      'phone': phone,
+      'projectId': projectId,
+      'isDeleted': isDeleted,
+      'isArchived': isArchived,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'deletedAt': deletedAt?.toIso8601String(),
+    };
+  }
+
+  factory Employee.fromJson(Map<String, dynamic> json) {
+    final employee = Employee(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      dailyWage: (json['dailyWage'] as num).toDouble(),
+      phone: json['phone'] as String? ?? '',
+      projectId: json['projectId'] as String? ?? '',
+    );
+    employee.isDeleted = json['isDeleted'] as bool? ?? false;
+    employee.isArchived = json['isArchived'] as bool? ?? false;
+    employee.createdAt = DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+        DateTime.now();
+    employee.updatedAt =
+        DateTime.tryParse(json['updatedAt'] as String? ?? '');
+    employee.deletedAt =
+        DateTime.tryParse(json['deletedAt'] as String? ?? '');
+    return employee;
+  }
 }

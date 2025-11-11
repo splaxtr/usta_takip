@@ -46,10 +46,11 @@ class HiveExpenseRepository implements ExpenseRepository {
   Future<void> markPaid(String id) async {
     final expense = _box.get(id);
     if (expense != null) {
-      expense
-        ..isPaid = true
-        ..updatedAt = DateTime.now();
-      await expense.save();
+      final updated = expense.copyWith(
+        isPaid: true,
+        updatedAt: DateTime.now(),
+      );
+      await _box.put(id, updated);
     }
   }
 
@@ -68,6 +69,27 @@ class HiveExpenseRepository implements ExpenseRepository {
   Future<void> update(Expense expense) async {
     expense.updatedAt = DateTime.now();
     await _box.put(expense.id, expense);
+  }
+
+  @override
+  Future<void> hardDelete(String id) async {
+    await _box.delete(id);
+  }
+
+  @override
+  Future<List<Expense>> getArchived() async {
+    return _box.values
+        .where((expense) => expense.isArchived && !expense.isDeleted)
+        .map(_copyExpense)
+        .toList();
+  }
+
+  @override
+  Future<List<Expense>> getDeleted() async {
+    return _box.values
+        .where((expense) => expense.isDeleted)
+        .map(_copyExpense)
+        .toList();
   }
 
   Expense _copyExpense(Expense source) {

@@ -9,4 +9,7 @@ abstract class WageRepository {
   Future<void> add(WageEntry entry);
   Future<void> update(WageEntry entry);
   Future<void> softDelete(String id);
+  Future<void> hardDelete(String id);
+  Future<List<WageEntry>> getArchived();
+  Future<List<WageEntry>> getDeleted();
 }

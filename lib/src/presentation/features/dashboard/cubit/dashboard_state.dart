@@ -7,6 +7,7 @@ class DashboardState extends Equatable {
     this.totalIncome = 0,
     this.paidExpenses = 0,
     this.pendingWages = 0,
+    this.outstandingPayments = 0,
     this.activeProjects = 0,
     this.lastBackup,
   });
@@ -16,6 +17,7 @@ class DashboardState extends Equatable {
   final double totalIncome;
   final double paidExpenses;
   final double pendingWages;
+  final double outstandingPayments;
   final int activeProjects;
   final DateTime? lastBackup;
 
@@ -25,6 +27,7 @@ class DashboardState extends Equatable {
     double? totalIncome,
     double? paidExpenses,
     double? pendingWages,
+    double? outstandingPayments,
     int? activeProjects,
     DateTime? lastBackup,
     bool resetError = false,
@@ -35,6 +38,7 @@ class DashboardState extends Equatable {
       totalIncome: totalIncome ?? this.totalIncome,
       paidExpenses: paidExpenses ?? this.paidExpenses,
       pendingWages: pendingWages ?? this.pendingWages,
+      outstandingPayments: outstandingPayments ?? this.outstandingPayments,
       activeProjects: activeProjects ?? this.activeProjects,
       lastBackup: lastBackup ?? this.lastBackup,
     );
@@ -47,6 +51,7 @@ class DashboardState extends Equatable {
         totalIncome,
         paidExpenses,
         pendingWages,
+        outstandingPayments,
         activeProjects,
         lastBackup,
       ];

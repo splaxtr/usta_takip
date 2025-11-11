@@ -25,6 +25,22 @@ class HiveEmployeeRepository implements EmployeeRepository {
   }
 
   @override
+  Future<List<Employee>> getArchived() async {
+    return _box.values
+        .where((employee) => employee.isArchived && !employee.isDeleted)
+        .map(_copyEmployee)
+        .toList();
+  }
+
+  @override
+  Future<List<Employee>> getDeleted() async {
+    return _box.values
+        .where((employee) => employee.isDeleted)
+        .map(_copyEmployee)
+        .toList();
+  }
+
+  @override
   Future<Employee?> getById(String id) async {
     final employee = _box.get(id);
     return employee == null ? null : _copyEmployee(employee);
@@ -36,7 +52,19 @@ class HiveEmployeeRepository implements EmployeeRepository {
     if (employee != null) {
       employee
         ..isDeleted = false
+        ..isArchived = false
         ..deletedAt = null
+        ..updatedAt = DateTime.now();
+      await employee.save();
+    }
+  }
+
+  @override
+  Future<void> archive(String id) async {
+    final employee = _box.get(id);
+    if (employee != null) {
+      employee
+        ..isArchived = true
         ..updatedAt = DateTime.now();
       await employee.save();
     }
@@ -51,6 +79,11 @@ class HiveEmployeeRepository implements EmployeeRepository {
         ..deletedAt = DateTime.now();
       await employee.save();
     }
+  }
+
+  @override
+  Future<void> hardDelete(String id) async {
+    await _box.delete(id);
   }
 
   @override

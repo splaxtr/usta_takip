@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../domain/usecases/record_work_day.dart';
+import '../../ledger/view/ledger_list_page.dart';
+import '../../settings/view/settings_page.dart';
 import '../cubit/dashboard_cubit.dart';
 import '../cubit/dashboard_state.dart';
 
@@ -17,6 +19,12 @@ class DashboardPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => context.read<DashboardCubit>().refresh(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsPage()),
+            ),
           ),
         ],
       ),
@@ -66,12 +74,24 @@ class DashboardPage extends StatelessWidget {
                   title: 'Ödenmiş Giderler',
                   value: '${state.paidExpenses.toStringAsFixed(0)} ₺',
                   icon: Icons.outbox_rounded,
+                  onTap: () =>
+                      _openLedgerList(context, LedgerListType.paidExpenses),
                 ),
                 _DashboardCard(
                   title: 'Bekleyen Yevmiyeler',
                   value: '${state.pendingWages.toStringAsFixed(0)} ₺',
                   icon: Icons.timer_outlined,
                   valueColor: Colors.orange.shade700,
+                  onTap: () =>
+                      _openLedgerList(context, LedgerListType.pendingWages),
+                ),
+                _DashboardCard(
+                  title: 'Patron Alacakları',
+                  value: '${state.outstandingPayments.toStringAsFixed(0)} ₺',
+                  icon: Icons.warning_amber,
+                  valueColor: Colors.redAccent,
+                  onTap: () =>
+                      _openLedgerList(context, LedgerListType.outstanding),
                 ),
                 _DashboardCard(
                   title: 'Aktif Proje',
@@ -84,6 +104,9 @@ class DashboardPage extends StatelessWidget {
                       ? state.lastBackup!.toLocal().toString()
                       : 'Henüz yapılmadı',
                   icon: Icons.backup_outlined,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SettingsPage()),
+                  ),
                 ),
               ],
             ),
@@ -153,46 +176,60 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
+void _openLedgerList(BuildContext context, LedgerListType type) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => LedgerListPage(listType: type),
+    ),
+  );
+}
+
 class _DashboardCard extends StatelessWidget {
   const _DashboardCard({
     required this.title,
     required this.value,
     required this.icon,
     this.valueColor,
+    this.onTap,
   });
 
   final String title;
   final String value;
   final IconData icon;
   final Color? valueColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(icon, size: 32, color: theme.colorScheme.primary),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Text(
-                    value,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: valueColor ?? theme.colorScheme.onSurface,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, size: 32, color: theme.colorScheme.primary),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      value,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: valueColor ?? theme.colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

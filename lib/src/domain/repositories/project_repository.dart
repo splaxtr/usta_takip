@@ -6,6 +6,9 @@ abstract class ProjectRepository {
   Future<void> add(Project project);
   Future<void> update(Project project);
   Future<void> softDelete(String id);
+  Future<void> hardDelete(String id);
   Future<void> archive(String id);
   Future<void> restore(String id);
+  Future<List<Project>> getArchived();
+  Future<List<Project>> getDeleted();
 }

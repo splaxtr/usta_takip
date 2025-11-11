@@ -60,4 +60,44 @@ class Project extends HiveObject with TrackableEntity {
     updated.deletedAt = deletedAt ?? this.deletedAt;
     return updated;
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'patronId': patronId,
+      'totalBudget': totalBudget,
+      'defaultDailyWage': defaultDailyWage,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'isDeleted': isDeleted,
+      'isArchived': isArchived,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'deletedAt': deletedAt?.toIso8601String(),
+    };
+  }
+
+  factory Project.fromJson(Map<String, dynamic> json) {
+    final project = Project(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      patronId: json['patronId'] as String? ?? '',
+      totalBudget: (json['totalBudget'] as num).toDouble(),
+      defaultDailyWage: (json['defaultDailyWage'] as num).toDouble(),
+      startDate: DateTime.parse(json['startDate'] as String),
+      endDate: json['endDate'] != null
+          ? DateTime.tryParse(json['endDate'] as String)
+          : null,
+    );
+    project.isDeleted = json['isDeleted'] as bool? ?? false;
+    project.isArchived = json['isArchived'] as bool? ?? false;
+    project.createdAt =
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now();
+    project.updatedAt =
+        DateTime.tryParse(json['updatedAt'] as String? ?? '');
+    project.deletedAt =
+        DateTime.tryParse(json['deletedAt'] as String? ?? '');
+    return project;
+  }
 }

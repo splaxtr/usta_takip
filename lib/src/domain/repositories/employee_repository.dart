@@ -7,4 +7,8 @@ abstract class EmployeeRepository {
   Future<void> update(Employee employee);
   Future<void> softDelete(String id);
   Future<void> restore(String id);
+  Future<void> hardDelete(String id);
+  Future<void> archive(String id);
+  Future<List<Employee>> getArchived();
+  Future<List<Employee>> getDeleted();
 }

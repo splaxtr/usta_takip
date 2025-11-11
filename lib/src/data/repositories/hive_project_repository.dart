@@ -37,6 +37,22 @@ class HiveProjectRepository implements ProjectRepository {
   }
 
   @override
+  Future<List<Project>> getArchived() async {
+    return _box.values
+        .where((project) => project.isArchived && !project.isDeleted)
+        .map(_copyProject)
+        .toList();
+  }
+
+  @override
+  Future<List<Project>> getDeleted() async {
+    return _box.values
+        .where((project) => project.isDeleted)
+        .map(_copyProject)
+        .toList();
+  }
+
+  @override
   Future<Project?> getById(String id) async {
     final project = _box.get(id);
     return project == null ? null : _copyProject(project);
@@ -64,6 +80,11 @@ class HiveProjectRepository implements ProjectRepository {
         ..deletedAt = DateTime.now();
       await project.save();
     }
+  }
+
+  @override
+  Future<void> hardDelete(String id) async {
+    await _box.delete(id);
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../data/models/employee.dart';
@@ -11,9 +12,14 @@ import '../data/models/wage_entry.dart';
 import '../data/models/wage_entry.g.dart';
 import '../data/repositories/hive_employee_repository.dart';
 import '../data/repositories/hive_expense_repository.dart';
+import '../data/repositories/hive_ledger_repository.dart';
 import '../data/repositories/hive_project_repository.dart';
 import '../data/repositories/hive_wage_repository.dart';
+import '../data/services/local_backup_service.dart';
+import '../data/services/secure_storage_auth_lock_service.dart';
+import '../domain/repositories/ledger_repository.dart';
 import 'app_dependencies.dart';
+import 'encryption_helper.dart';
 
 Future<AppDependencies> bootstrapApplication() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,21 +27,48 @@ Future<AppDependencies> bootstrapApplication() async {
   await Hive.initFlutter();
   _registerAdapters();
 
-  final projectsBox = await Hive.openBox<Project>('projects');
-  final employeesBox = await Hive.openBox<Employee>('employees');
-  final wagesBox = await Hive.openBox<WageEntry>('wage_entries');
-  final expensesBox = await Hive.openBox<Expense>('expenses');
+  final encryptionHelper = EncryptionHelper();
+  final encryptionKey = await encryptionHelper.loadKey();
+  final cipher = HiveAesCipher(encryptionKey);
+
+  final projectsBox =
+      await Hive.openBox<Project>('projects', encryptionCipher: cipher);
+  final employeesBox =
+      await Hive.openBox<Employee>('employees', encryptionCipher: cipher);
+  final wagesBox =
+      await Hive.openBox<WageEntry>('wage_entries', encryptionCipher: cipher);
+  final expensesBox =
+      await Hive.openBox<Expense>('expenses', encryptionCipher: cipher);
+  final settingsBox = await Hive.openBox('settings', encryptionCipher: cipher);
 
   final projectRepository = HiveProjectRepository(projectsBox);
   final employeeRepository = HiveEmployeeRepository(employeesBox);
   final wageRepository = HiveWageRepository(wagesBox);
   final expenseRepository = HiveExpenseRepository(expensesBox);
+  final ledgerRepository = HiveLedgerRepository(
+    projectBox: projectsBox,
+    wageBox: wagesBox,
+    expenseBox: expensesBox,
+    settingsBox: settingsBox,
+  );
+  final authLockService = SecureStorageAuthLockService();
+  final backupService = LocalBackupService(
+    projectBox: projectsBox,
+    employeeBox: employeesBox,
+    wageBox: wagesBox,
+    expenseBox: expensesBox,
+    settingsBox: settingsBox,
+    encryptionKey: encryptionKey,
+  );
 
   return AppDependencies(
     projectRepository: projectRepository,
     employeeRepository: employeeRepository,
     wageRepository: wageRepository,
     expenseRepository: expenseRepository,
+    ledgerRepository: ledgerRepository,
+    backupService: backupService,
+    authLockService: authLockService,
   );
 }
 

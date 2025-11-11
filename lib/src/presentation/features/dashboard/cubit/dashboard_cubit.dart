@@ -1,50 +1,39 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../domain/repositories/expense_repository.dart';
-import '../../../../domain/repositories/project_repository.dart';
-import '../../../../domain/repositories/wage_repository.dart';
+import '../../../../domain/repositories/ledger_repository.dart';
+import '../../../../domain/services/backup_service.dart';
 import '../../../../domain/usecases/record_work_day.dart';
 import 'dashboard_state.dart';
 
 class DashboardCubit extends Cubit<DashboardState> {
   DashboardCubit({
-    required ProjectRepository projectRepository,
-    required ExpenseRepository expenseRepository,
-    required WageRepository wageRepository,
+    required LedgerRepository ledgerRepository,
+    required BackupService backupService,
     required RecordWorkDay recordWorkDay,
-  })  : _projectRepository = projectRepository,
-        _expenseRepository = expenseRepository,
-        _wageRepository = wageRepository,
+  })  : _ledgerRepository = ledgerRepository,
+        _backupService = backupService,
         _recordWorkDay = recordWorkDay,
         super(const DashboardState());
 
-  final ProjectRepository _projectRepository;
-  final ExpenseRepository _expenseRepository;
-  final WageRepository _wageRepository;
+  final LedgerRepository _ledgerRepository;
+  final BackupService _backupService;
   final RecordWorkDay _recordWorkDay;
 
   Future<void> refresh() async {
     emit(state.copyWith(isLoading: true, resetError: true));
     try {
-      final projects = await _projectRepository.getAll();
-      final expenses = await _expenseRepository.getAll();
-      final pendingWages = await _wageRepository.getPendingTotal();
-
-      final totalIncome = projects.fold<double>(
-        0,
-        (sum, project) => sum + project.totalBudget,
-      );
-      final paidExpenses = expenses
-          .where((expense) => expense.isPaid)
-          .fold<double>(0, (sum, expense) => sum + expense.amount);
+      final summary = await _ledgerRepository.loadSummary();
+      final lastBackup = await _backupService.lastBackupTime();
 
       emit(
         state.copyWith(
           isLoading: false,
-          totalIncome: totalIncome,
-          paidExpenses: paidExpenses,
-          pendingWages: pendingWages,
-          activeProjects: projects.length,
+          totalIncome: summary.totalIncome,
+          paidExpenses: summary.paidExpenses,
+          pendingWages: summary.pendingWages,
+          outstandingPayments: summary.outstandingPatronPayments,
+          activeProjects: summary.activeProjects,
+          lastBackup: lastBackup ?? summary.lastBackup,
         ),
       );
     } catch (error) {
