@@ -1,66 +1,95 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:usta_takip_app/core/models/project_model.dart';
 import 'package:usta_takip_app/core/repositories/project_repository.dart';
-import '../../helpers/hive_test_helper.dart';
+
 import '../../fixtures/test_data.dart';
+import '../../helpers/hive_test_helper.dart';
 
 void main() {
-  late Box testBox;
+  const boxName = 'projects_test_box';
+  late Box<dynamic> projectBox;
   late ProjectRepository repository;
 
   setUpAll(() async {
     await HiveTestHelper.initHive();
   });
 
-  setUp(() async {
-    testBox = await HiveTestHelper.openBox('projects_test');
-    repository = ProjectRepository(testBox);
-  });
-
-  tearDown(() async {
-    await testBox.clear();
-  });
-
   tearDownAll(() async {
     await HiveTestHelper.closeHive();
   });
 
+  setUp(() async {
+    projectBox = await HiveTestHelper.openBox(boxName);
+    repository = ProjectRepository(projectBox);
+  });
+
+  tearDown(() async {
+    await projectBox.clear();
+  });
+
   group('createProject', () {
-    test('Yeni proje başarıyla oluşturulmalı', () async {
+    test('Yeni proje başarıyla oluşturulmalı ve pozitif ID dönmeli', () async {
       // Arrange
-      final project = Project(
-        name: 'Test Projesi',
-        startDate: '2024-01-01',
-        patronKey: 1,
-      );
+      final project = TestData.project(name: 'Test Projesi');
 
       // Act
-      final projectId = await repository.createProject(project);
+      final id = await repository.createProject(project);
 
       // Assert
-      expect(projectId, isA<int>());
-      expect(testBox.length, equals(1));
+      expect(id, isA<int>());
+      expect(id, greaterThanOrEqualTo(0));
+      expect(projectBox.length, equals(1));
+    });
+
+    test('Proje Hive kutusunda toJson formatıyla saklanmalı', () async {
+      // Arrange
+      final project = TestData.project(name: 'Json Kontrolü', patronKey: 42);
+
+      // Act
+      final id = await repository.createProject(project);
+      final stored = projectBox.get(id) as Map<String, dynamic>;
+
+      // Assert
+      expect(stored, equals(project.toJson()));
     });
   });
 
   group('getProject', () {
-    test('Var olan projeyi getirmeli', () async {
+    test('Var olan projeyi ID ile getirmeli ve model ID alanını set etmeli', () async {
       // Arrange
-      final projectData = TestData.sampleProject();
-      final projectId = await testBox.add(projectData);
+      final id = await projectBox.add(TestData.projectJson(name: 'Kaydedilen Proje'));
 
       // Act
-      final project = repository.getProject(projectId);
+      final project = repository.getProject(id);
 
       // Assert
       expect(project, isNotNull);
-      expect(project!.name, equals('Test Projesi'));
+      expect(project!.id, equals(id));
+      expect(project.name, equals('Kaydedilen Proje'));
+    });
+
+    test('Eksik status alanı olduğunda varsayılan olarak active dönmeli', () async {
+      // Arrange
+      final id = await projectBox.add({
+        'name': 'Statüsüz Proje',
+        'startDate': '2024-03-01',
+        'patronKey': 7,
+      });
+
+      // Act
+      final project = repository.getProject(id);
+
+      // Assert
+      expect(project, isNotNull);
+      expect(project!.status, equals('active'));
     });
 
     test('Olmayan ID için null döndürmeli', () {
       // Act
-      final project = repository.getProject(999);
+      final project = repository.getProject(9999);
 
       // Assert
       expect(project, isNull);
@@ -68,85 +97,53 @@ void main() {
   });
 
   group('getAllProjects', () {
-    test('Tüm projeleri listelemeli', () async {
+    test('Projeleri ekleme sırasına göre döndürmeli', () async {
       // Arrange
-      final projects = TestData.multipleProjects();
-      for (var p in projects) {
-        await testBox.add(p);
-      }
+      final inserted = [
+        await projectBox.add(TestData.projectJson(name: 'Bir')),
+        await projectBox.add(TestData.projectJson(name: 'İki')),
+        await projectBox.add(TestData.projectJson(name: 'Üç')),
+      ];
 
       // Act
-      final result = repository.getAllProjects();
+      final projects = repository.getAllProjects();
 
       // Assert
-      expect(result.length, equals(3));
-    });
-  });
-
-  group('updateProject', () {
-    test('Projeyi güncellemeli', () async {
-      // Arrange
-      final project = Project(name: 'Eski', startDate: '2024-01-01');
-      final id = await repository.createProject(project);
-
-      // Act
-      final updated = Project(name: 'Yeni', startDate: '2024-01-01');
-      await repository.updateProject(id, updated);
-
-      // Assert
-      final result = repository.getProject(id);
-      expect(result!.name, equals('Yeni'));
-    });
-  });
-
-  group('deleteProject', () {
-    test('Projeyi silmeli', () async {
-      // Arrange
-      final project = Project(name: 'Test', startDate: '2024-01-01');
-      final id = await repository.createProject(project);
-
-      // Act
-      await repository.deleteProject(id);
-
-      // Assert
-      expect(repository.getProject(id), isNull);
+      expect(projects.map((p) => p.id), containsAllInOrder(inserted));
     });
 
-    test('Birden fazla projeden sadece belirtilen silinmeli', () async {
+    test('Dönen liste kutudan bağımsız olmalı (mutasyon izolasyonu)', () async {
       // Arrange
-      final id1 = await repository.createProject(Project(name: 'P1', startDate: '2024-01-01'));
-      final id2 = await repository.createProject(Project(name: 'P2', startDate: '2024-01-02'));
-      final id3 = await repository.createProject(Project(name: 'P3', startDate: '2024-01-03'));
+      await repository.createProject(TestData.project(name: 'Orijinal'));
 
       // Act
-      await repository.deleteProject(id2);
+      final projects = repository.getAllProjects();
+      projects[0] = projects[0].copyWith(name: 'Mutasyona Uğradı');
+      final fetchedAgain = repository.getAllProjects().first;
 
       // Assert
-      expect(repository.getProject(id1), isNotNull);
-      expect(repository.getProject(id2), isNull);
-      expect(repository.getProject(id3), isNotNull);
-      expect(testBox.length, equals(2));
+      expect(fetchedAgain.name, equals('Orijinal'));
     });
   });
 
   group('getActiveProjects', () {
-    test('Sadece aktif projeleri getirmeli', () async {
+    test('Sadece status active olanları döndürmeli', () async {
       // Arrange
-      await repository.createProject(Project(name: 'Aktif 1', startDate: '2024-01-01', status: 'active'));
-      await repository.createProject(Project(name: 'Tamamlanan', startDate: '2024-01-02', status: 'completed'));
-      await repository.createProject(Project(name: 'Aktif 2', startDate: '2024-01-03', status: 'active'));
+      await repository.createProject(TestData.project(name: 'Aktif 1'));
+      await repository.createProject(TestData.project(name: 'Tamamlanan', status: 'completed'));
+      await repository.createProject(TestData.project(name: 'Aktif 2', status: 'active'));
 
       // Act
       final activeProjects = repository.getActiveProjects();
 
       // Assert
-      expect(activeProjects.length, equals(2));
-      expect(activeProjects.every((p) => p.status == 'active'), isTrue);
+      expect(activeProjects, hasLength(2));
+      expect(activeProjects.map((p) => p.status).toSet(), equals({'active'}));
     });
 
     test('Aktif proje yoksa boş liste döndürmeli', () async {
       // Arrange
-      await repository.createProject(Project(name: 'Tamamlanan', startDate: '2024-01-01', status: 'completed'));
+      await repository.createProject(TestData.project(name: 'Tamamlanan', status: 'completed'));
 
       // Act
       final activeProjects = repository.getActiveProjects();
@@ -156,86 +153,201 @@ void main() {
     });
   });
 
-  group('searchProjects', () {
-    test('İsme göre arama yapmalı (case-insensitive)', () async {
+  group('updateProject', () {
+    test('Projeyi verilen bilgilerle güncellemeli', () async {
       // Arrange
-      await repository.createProject(Project(name: 'Villa İnşaatı', startDate: '2024-01-01'));
-      await repository.createProject(Project(name: 'Apartman Tadilat', startDate: '2024-01-02'));
-      await repository.createProject(Project(name: 'Villa Yenileme', startDate: '2024-01-03'));
+      final id = await repository.createProject(TestData.project(name: 'Eski', status: 'active'));
+      final updated = TestData.project(id: id, name: 'Yeni', status: 'completed');
+
+      // Act
+      await repository.updateProject(id, updated);
+      final result = repository.getProject(id)!;
+
+      // Assert
+      expect(result.name, equals('Yeni'));
+      expect(result.status, equals('completed'));
+    });
+
+    test('copyWith kullanarak yapılan güncelleme diğer alanları korumalı', () async {
+      // Arrange
+      final id = await repository.createProject(
+        TestData.project(name: 'Orijinal', startDate: '2024-04-01', patronKey: 5),
+      );
+      final existing = repository.getProject(id)!;
+
+      // Act
+      await repository.updateProject(id, existing.copyWith(name: 'Güncellendi'));
+      final updated = repository.getProject(id)!;
+
+      // Assert
+      expect(updated.name, equals('Güncellendi'));
+      expect(updated.startDate, equals('2024-04-01'));
+      expect(updated.patronKey, equals(5));
+    });
+
+    test('Olmayan ID için update çağrısı yeni kayıt oluşturmalı (Hive put davranışı)', () async {
+      // Arrange
+      final phantomId = 777;
+      final project = TestData.project(id: phantomId, name: 'Yeni Kayıt', status: 'active');
+
+      // Act
+      await repository.updateProject(phantomId, project);
+
+      // Assert
+      final stored = repository.getProject(phantomId);
+      expect(stored, isNotNull);
+      expect(stored!.name, equals('Yeni Kayıt'));
+    });
+  });
+
+  group('deleteProject', () {
+    test('Projeyi kutudan kaldırmalı', () async {
+      // Arrange
+      final id = await repository.createProject(TestData.project(name: 'Silinecek'));
+
+      // Act
+      await repository.deleteProject(id);
+
+      // Assert
+      expect(repository.getProject(id), isNull);
+      expect(projectBox.length, equals(0));
+    });
+
+    test('Birden fazla projeden sadece hedef silinmeli', () async {
+      // Arrange
+      final ids = await Future.wait([
+        repository.createProject(TestData.project(name: 'P1')),
+        repository.createProject(TestData.project(name: 'P2')),
+        repository.createProject(TestData.project(name: 'P3')),
+      ]);
+
+      // Act
+      await repository.deleteProject(ids[1]);
+
+      // Assert
+      expect(repository.getProject(ids[0]), isNotNull);
+      expect(repository.getProject(ids[1]), isNull);
+      expect(repository.getProject(ids[2]), isNotNull);
+      expect(projectBox.length, equals(2));
+    });
+
+    test('Olmayan ID silinmeye çalışıldığında hata fırlatmamalı', () async {
+      // Act & Assert
+      expect(repository.deleteProject(999), completes);
+      expect(projectBox.length, equals(0));
+    });
+  });
+
+  group('searchProjects', () {
+    test('İsme göre arama case-insensitive çalışmalı', () async {
+      // Arrange
+      await repository.createProject(TestData.project(name: 'Villa İnşaatı'));
+      await repository.createProject(TestData.project(name: 'Apartman Tadilat'));
+      await repository.createProject(TestData.project(name: 'VİLLA Yenileme'));
 
       // Act
       final results = repository.searchProjects('villa');
 
       // Assert
-      expect(results.length, equals(2));
+      expect(results, hasLength(2));
+      expect(results.every((p) => p.name.toLowerCase().contains('villa')), isTrue);
     });
 
-    test('Eşleşme yoksa boş liste döndürmeli', () async {
+    test('Boş string sorgusu tüm projeleri döndürmeli', () async {
       // Arrange
-      await repository.createProject(Project(name: 'Test', startDate: '2024-01-01'));
-
-      // Act
-      final results = repository.searchProjects('Bulunamaz');
-
-      // Assert
-      expect(results, isEmpty);
-    });
-
-    test('Boş string ile tüm projeleri döndürmeli', () async {
-      // Arrange
-      await repository.createProject(Project(name: 'P1', startDate: '2024-01-01'));
-      await repository.createProject(Project(name: 'P2', startDate: '2024-01-02'));
+      await repository.createProject(TestData.project(name: 'Proje 1'));
+      await repository.createProject(TestData.project(name: 'Proje 2'));
 
       // Act
       final results = repository.searchProjects('');
 
       // Assert
-      expect(results.length, equals(2));
+      expect(results, hasLength(2));
+    });
+
+    test('Eşleşme yoksa boş liste dönmeli', () async {
+      // Arrange
+      await repository.createProject(TestData.project(name: 'Sadece Bu'));
+
+      // Act
+      final results = repository.searchProjects('Bulunamayacak');
+
+      // Assert
+      expect(results, isEmpty);
     });
   });
 
-  group('Edge Cases', () {
-    test('Çok uzun proje ismi kaydedilebilmeli', () async {
+  group('getProjectCount', () {
+    test('Boş kutu için 0 döndürmeli', () {
+      // Act & Assert
+      expect(repository.getProjectCount(), equals(0));
+    });
+
+    test('Ekleme ve silme sonrası sayı güncel olmalı', () async {
       // Arrange
-      final longName = 'A' * 500;
-      final project = Project(name: longName, startDate: '2024-01-01');
+      final id1 = await repository.createProject(TestData.project(name: 'Proje A'));
+      final id2 = await repository.createProject(TestData.project(name: 'Proje B'));
+      expect(repository.getProjectCount(), equals(2));
+
+      // Act
+      await repository.deleteProject(id1);
+
+      // Assert
+      expect(repository.getProjectCount(), equals(1));
+
+      await repository.deleteProject(id2);
+      expect(repository.getProjectCount(), equals(0));
+    });
+  });
+
+  group('Edge cases', () {
+    test('Çok uzun ve çok dilli isimler sorunsuz kaydedilmeli', () async {
+      // Arrange
+      final longName = TestData.longMultilingualProjectName();
+
+      // Act
+      final id = await repository.createProject(
+        TestData.project(name: longName, startDate: '2024-01-01'),
+      );
+      final stored = repository.getProject(id)!;
+
+      // Assert
+      expect(stored.name, equals(longName));
+    });
+
+    test('Start date boş olduğunda bile veri saklanmalı', () async {
+      // Arrange
+      final project = Project(name: 'Boş Tarihli', startDate: '');
 
       // Act
       final id = await repository.createProject(project);
-      final retrieved = repository.getProject(id);
 
       // Assert
-      expect(retrieved!.name.length, equals(500));
+      final stored = repository.getProject(id)!;
+      expect(stored.startDate, equals(''));
     });
 
-    test('Türkçe karakterler doğru işlenmeli', () async {
+    test('Paralel eklenen projelerin sayısı doğru olmalı', () async {
       // Arrange
-      final project = Project(name: 'Şehir İçi İnşaat Çalışması', startDate: '2024-01-01');
+      final futures = List.generate(
+        10,
+        (index) => repository.createProject(TestData.project(name: 'Proje $index')),
+      );
 
       // Act
-      final id = await repository.createProject(project);
-      final retrieved = repository.getProject(id);
+      await Future.wait(futures);
 
       // Assert
-      expect(retrieved!.name, equals('Şehir İçi İnşaat Çalışması'));
+      expect(repository.getProjectCount(), equals(10));
     });
 
-    test('Özel karakterler kaydedilebilmeli', () async {
+    test('Büyük veri seti performansı kabul edilebilir olmalı', () async {
       // Arrange
-      final project = Project(name: 'Test!@#\$%^&*()', startDate: '2024-01-01');
-
-      // Act
-      final id = await repository.createProject(project);
-      final retrieved = repository.getProject(id);
-
-      // Assert
-      expect(retrieved!.name, contains('!@#'));
-    });
-
-    test('Büyük veri seti - 100 proje performans testi', () async {
-      // Arrange
-      for (int i = 0; i < 100; i++) {
-        await repository.createProject(Project(name: 'Proje $i', startDate: '2024-01-01'));
+      final count = 250;
+      for (var i = 0; i < count; i++) {
+        await repository.createProject(
+          TestData.project(name: 'Proje $i', startDate: '2024-01-01'),
+        );
       }
 
       // Act
@@ -244,72 +356,21 @@ void main() {
       stopwatch.stop();
 
       // Assert
-      expect(projects.length, equals(100));
-      expect(stopwatch.elapsedMilliseconds, lessThan(1000));
+      expect(projects, hasLength(count));
+      expect(stopwatch.elapsedMilliseconds, lessThan(750));
     });
 
-    test('Aynı isimde birden fazla proje oluşturulabilmeli', () async {
-      // Arrange & Act
-      final id1 = await repository.createProject(Project(name: 'Aynı', startDate: '2024-01-01'));
-      final id2 = await repository.createProject(Project(name: 'Aynı', startDate: '2024-01-02'));
-
-      // Assert
-      expect(id1, isNot(equals(id2)));
-      expect(testBox.length, equals(2));
-    });
-
-    test('copyWith metodunu kullanarak güncelleme', () async {
+    test('Random ID ile create çağrısı sonrası veriler tutarlı kalmalı', () async {
       // Arrange
-      final project = Project(
-        name: 'Orijinal',
-        startDate: '2024-01-01',
-        patronKey: 1,
-        status: 'active',
-      );
-      final id = await repository.createProject(project);
+      final random = Random();
+      final project = TestData.project(name: 'Rastgele', patronKey: random.nextInt(1000));
 
       // Act
-      final original = repository.getProject(id)!;
-      final updated = original.copyWith(name: 'Değişti');
-      await repository.updateProject(id, updated);
+      final id = await repository.createProject(project);
 
       // Assert
-      final result = repository.getProject(id)!;
-      expect(result.name, equals('Değişti'));
-      expect(result.patronKey, equals(1)); // Değişmemeli
-      expect(result.startDate, equals('2024-01-01')); // Değişmemeli
-    });
-
-    test('Olmayan projeyi silmeye çalışmak hata vermemeli', () async {
-      // Act & Assert
-      expect(() async => await repository.deleteProject(999), returnsNormally);
-    });
-  });
-
-  group('getProjectCount', () {
-    test('Boş box için 0 döndürmeli', () {
-      expect(repository.getProjectCount(), equals(0));
-    });
-
-    test('Doğru sayıyı döndürmeli', () async {
-      // Arrange
-      for (int i = 0; i < 5; i++) {
-        await repository.createProject(Project(name: 'P$i', startDate: '2024-01-01'));
-      }
-
-      // Act & Assert
-      expect(repository.getProjectCount(), equals(5));
-    });
-
-    test('Ekleme/silme sonrası sayı güncel olmalı', () async {
-      // Arrange & Act
-      expect(repository.getProjectCount(), equals(0));
-
-      final id = await repository.createProject(Project(name: 'Test', startDate: '2024-01-01'));
-      expect(repository.getProjectCount(), equals(1));
-
-      await repository.deleteProject(id);
-      expect(repository.getProjectCount(), equals(0));
+      final stored = repository.getProject(id)!;
+      expect(stored.patronKey, equals(project.patronKey));
     });
   });
 }

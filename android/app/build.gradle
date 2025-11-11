@@ -61,7 +61,7 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        
+
         release {
             def keystorePropertiesFile = rootProject.file('key.properties')
             if (keystorePropertiesFile.exists()) {
@@ -73,7 +73,11 @@ android {
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
             } else {
-                throw new GradleException("key.properties bulunamadı!")
+                println("key.properties bulunamadı, release imzası için debug keystore kullanılacak.")
+                storeFile file('../debug.keystore')
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
             }
         }
     }

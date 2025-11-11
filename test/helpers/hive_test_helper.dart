@@ -7,25 +7,30 @@ class HiveTestHelper {
   static final List<String> _openBoxes = [];
 
   /// Test için Hive'ı başlatır
-  static Future<void> initHive() async {
+  static Future<void> initHive({void Function()? registerAdapters}) async {
     _tempDir = await Directory.systemTemp.createTemp('hive_test_');
     Hive.init(_tempDir!.path);
+    registerAdapters?.call();
   }
 
   /// Belirtilen isimde bir box açar
-  static Future<Box> openBox(String boxName) async {
+  static Future<Box<T>> openBox<T>(String boxName) async {
     if (Hive.isBoxOpen(boxName)) {
-      await Hive.box(boxName).clear();
-      return Hive.box(boxName);
+      final box = Hive.box<T>(boxName);
+      await box.clear();
+      return box;
     }
-    final box = await Hive.openBox(boxName);
+    final box = await Hive.openBox<T>(boxName);
     _openBoxes.add(boxName);
     return box;
   }
 
   /// Belirtilen box'a test verisi ekler
-  static Future<int> addData(String boxName, Map<String, dynamic> data) async {
-    final box = await openBox(boxName);
+  static Future<int> addData(
+    String boxName,
+    Map<String, dynamic> data,
+  ) async {
+    final box = await openBox<dynamic>(boxName);
     return await box.add(data);
   }
 

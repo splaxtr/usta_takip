@@ -135,7 +135,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
       ),
       body: Column(
         children: [
-          _buildProjectSummary(),
+          ValueListenableBuilder(
+            valueListenable: gelirGiderBox.listenable(),
+            builder: (context, Box _, __) {
+              return ValueListenableBuilder(
+                valueListenable: mesaiBox.listenable(),
+                builder: (context, Box __, ___) => _buildProjectSummary(),
+              );
+            },
+          ),
           Container(
             color: const Color(0xFF101922),
             child: TabBar(
@@ -169,6 +177,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   Widget _buildProjectSummary() {
     double totalIncome = 0;
     double totalExpenses = 0;
+
+    final String status =
+        (projectData?['status'] ?? 'active').toString().toLowerCase();
+    final bool isCompleted = status == 'completed';
+    final Color statusColor =
+        isCompleted ? Colors.orange : Colors.green;
+    final String statusLabel = isCompleted ? 'Tamamlandı' : 'Aktif';
 
     // Gelir/Gider hesapla
     for (var key in gelirGiderBox.keys) {
@@ -264,12 +279,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.3),
+                  color: statusColor.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'Aktif',
-                  style: TextStyle(
+                child: Text(
+                  statusLabel,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -298,7 +313,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
               Expanded(
                 child: _buildSummaryItem(
                   'Net',
-                  '${netBalance.toStringAsFixed(0)}₺',
+                  NumberFormatter.formatCurrency(netBalance),
                   netBalance >= 0 ? Colors.white : Colors.orange.shade300,
                 ),
               ),
@@ -2505,163 +2520,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     );
   }
 
-  // GÜN EKLEME DİALOGU
-  Future<void> _showAddWorkDayDialog(int mesaiKey, int employeeKey) async {
-    final daysController = TextEditingController(text: '1');
-    var employee = calisanBox.get(employeeKey);
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text(
-          '${employee['name']} - Gün Ekle',
-          style: const TextStyle(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: daysController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Kaç gün çalıştı?',
-                labelStyle: TextStyle(color: Colors.grey[400]),
-                hintText: '1',
-                hintStyle: TextStyle(color: Colors.grey[600]),
-                prefixIcon:
-                    const Icon(Icons.calendar_today, color: Colors.blue),
-                filled: true,
-                fillColor: const Color(0xFF101922),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Her gün için günlük ücret hesaplanacak',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              int additionalDays = int.tryParse(daysController.text) ?? 0;
-              if (additionalDays > 0) {
-                var mesaiData = mesaiBox.get(mesaiKey);
-                mesaiData['workDays'] =
-                    (mesaiData['workDays'] ?? 0) + additionalDays;
-                await mesaiBox.put(mesaiKey, mesaiData);
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('$additionalDays gün eklendi!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            child: const Text('Ekle', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // GÜNLÜK ÜCRETİ DÜZENLEME DİALOGU
-  Future<void> _showEditDailyWageDialog(
-      int mesaiKey, double? currentWage) async {
-    final wageController = TextEditingController(
-      text: currentWage?.toStringAsFixed(0) ?? '2500',
-    );
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text(
-          'Günlük Ücreti Düzenle',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: TextField(
-          controller: wageController,
-          keyboardType: TextInputType.number,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            labelText: 'Yeni Günlük Ücret (₺)',
-            labelStyle: TextStyle(color: Colors.grey[400]),
-            prefixIcon: const Icon(Icons.attach_money, color: Colors.green),
-            filled: true,
-            fillColor: const Color(0xFF101922),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              double newWage = double.tryParse(wageController.text) ?? 0;
-              if (newWage > 0) {
-                var mesaiData = mesaiBox.get(mesaiKey);
-                mesaiData['dailyWage'] = newWage;
-                await mesaiBox.put(mesaiKey, mesaiData);
-
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Günlük ücret güncellendi!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Kaydet', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
   // GELİR/GİDER EKLEME DİALOGU
   Future<void> _showAddTransactionDialog(String type) async {
     final amountController = TextEditingController();
@@ -3534,23 +3392,29 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           ),
           ElevatedButton.icon(
             onPressed: () async {
+              final navigator = Navigator.of(dialogContext);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+
               var mesaiData = mesaiBox.get(mesaiKey);
               List payments = mesaiData['payments'];
               payments.removeAt(paymentIndex);
               await mesaiBox.put(mesaiKey, mesaiData);
 
-              if (mounted) {
-                // context.mounted yerine mounted
-                Navigator.pop(dialogContext); // Silme dialogunu kapat
-                Navigator.pop(dialogContext); // Geçmiş dialogunu kapat
-                setState(() {}); // this. olmadan
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Ödeme silindi!'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
+              if (!mounted) {
+                return;
               }
+
+              navigator.pop(); // Silme dialogunu kapat
+              if (navigator.canPop()) {
+                navigator.pop(); // Geçmiş dialogunu kapat
+              }
+              setState(() {});
+              scaffoldMessenger.showSnackBar(
+                const SnackBar(
+                  content: Text('Ödeme silindi!'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             icon: const Icon(Icons.delete_forever, size: 20),
