@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../data/models/employee.dart';
 import '../../data/models/expense.dart';
+import '../../data/models/patron.dart';
 import '../../data/models/project.dart';
 import '../../data/models/wage_entry.dart';
 import '../../domain/services/backup_service.dart';
@@ -16,12 +17,14 @@ class LocalBackupService implements BackupService {
   LocalBackupService({
     required Box<Project> projectBox,
     required Box<Employee> employeeBox,
+    required Box<Patron> patronBox,
     required Box<WageEntry> wageBox,
     required Box<Expense> expenseBox,
     required Box settingsBox,
     required List<int> encryptionKey,
   })  : _projectBox = projectBox,
         _employeeBox = employeeBox,
+        _patronBox = patronBox,
         _wageBox = wageBox,
         _expenseBox = expenseBox,
         _settingsBox = settingsBox,
@@ -33,6 +36,7 @@ class LocalBackupService implements BackupService {
   final Box<Project> _projectBox;
   final Box<Employee> _employeeBox;
   final Box<WageEntry> _wageBox;
+  final Box<Patron> _patronBox;
   final Box<Expense> _expenseBox;
   final Box _settingsBox;
 
@@ -46,6 +50,7 @@ class LocalBackupService implements BackupService {
     final payload = {
       'projects': _projectBox.values.map((e) => e.toJson()).toList(),
       'employees': _employeeBox.values.map((e) => e.toJson()).toList(),
+      'patrons': _patronBox.values.map((e) => e.toJson()).toList(),
       'wages': _wageBox.values.map((e) => e.toJson()).toList(),
       'expenses': _expenseBox.values.map((e) => e.toJson()).toList(),
     };
@@ -84,6 +89,11 @@ class LocalBackupService implements BackupService {
       _employeeBox,
       (json) => Employee.fromJson(json as Map<String, dynamic>),
       data['employees'] as List<dynamic>? ?? const [],
+    );
+    await _restoreBox<Patron>(
+      _patronBox,
+      (json) => Patron.fromJson(json as Map<String, dynamic>),
+      data['patrons'] as List<dynamic>? ?? const [],
     );
     await _restoreBox<WageEntry>(
       _wageBox,

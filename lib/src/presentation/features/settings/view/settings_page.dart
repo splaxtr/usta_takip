@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../domain/services/auth_lock_service.dart';
 import '../../../../domain/services/backup_service.dart';
+import '../../trash/view/trash_content.dart';
 import '../cubit/settings_cubit.dart';
 import '../cubit/settings_state.dart';
 
@@ -13,7 +13,6 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => SettingsCubit(
-        context.read<AuthLockService>(),
         context.read<BackupService>(),
       )..load(),
       child: const _SettingsView(),
@@ -21,108 +20,109 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-class _SettingsView extends StatefulWidget {
+class _SettingsView extends StatelessWidget {
   const _SettingsView();
 
   @override
-  State<_SettingsView> createState() => _SettingsViewState();
-}
-
-class _SettingsViewState extends State<_SettingsView> {
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Ayarlar')),
-      body: BlocConsumer<SettingsCubit, SettingsState>(
-        listener: (context, state) {
-          if (state.statusMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.statusMessage!)),
-            );
-          }
-        },
-        builder: (context, state) {
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              SwitchListTile(
-                title: const Text('PIN / Biyometrik Kilit'),
-                value: state.lockEnabled,
-                onChanged: state.isProcessing
-                    ? null
-                    : (value) async {
-                        if (value) {
-                          final pin = await _askForPin(context);
-                          if (pin != null && pin.length >= 4) {
-                            await context.read<SettingsCubit>().enableLock(pin);
-                          }
-                        } else {
-                          await context.read<SettingsCubit>().disableLock();
-                        }
-                      },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.backup_outlined),
-                title: const Text('Hemen Yedekle'),
-                subtitle: Text(
-                  state.lastBackup != null
-                      ? 'Son: ${state.lastBackup}'
-                      : 'Henüz yedek alınmadı',
-                ),
-                trailing: state.isProcessing
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : null,
-                onTap: state.isProcessing
-                    ? null
-                    : () => context.read<SettingsCubit>().backupNow(),
-              ),
-              ListTile(
-                leading: const Icon(Icons.restore),
-                title: const Text('Son Yedeği Geri Yükle'),
-                onTap: state.isProcessing
-                    ? null
-                    : () => context.read<SettingsCubit>().restoreBackup(),
-              ),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Ayarlar'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Yedekleme'),
+              Tab(text: 'Çöp Kutusu'),
+              Tab(text: 'Hakkında'),
             ],
-          );
-        },
+          ),
+        ),
+        body: BlocConsumer<SettingsCubit, SettingsState>(
+          listener: (context, state) {
+            if (state.statusMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.statusMessage!)),
+              );
+            }
+          },
+          builder: (context, state) {
+            return TabBarView(
+              children: [
+                _BackupTab(state: state),
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: TrashContent(),
+                ),
+                const _AboutTab(),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
+}
 
-  Future<String?> _askForPin(BuildContext context) async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('PIN oluştur'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          obscureText: true,
-          decoration: const InputDecoration(
-            labelText: 'En az 4 haneli PIN',
+class _BackupTab extends StatelessWidget {
+  const _BackupTab({required this.state});
+
+  final SettingsState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        ListTile(
+          leading: const Icon(Icons.backup_outlined),
+          title: const Text('Yedek Oluştur'),
+          subtitle: Text(
+            state.lastBackup != null
+                ? 'Son: ${state.lastBackup}'
+                : 'Henüz yedek alınmadı',
           ),
+          trailing: state.isProcessing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : null,
+          onTap: state.isProcessing
+              ? null
+              : () => context.read<SettingsCubit>().backupNow(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () =>
-                Navigator.pop(context, controller.text.trim()),
-            child: const Text('Kaydet'),
-          ),
-        ],
-      ),
+        ListTile(
+          leading: const Icon(Icons.restore),
+          title: const Text('Son Yedeği Yükle'),
+          onTap: state.isProcessing
+              ? null
+              : () => context.read<SettingsCubit>().restoreBackup(),
+        ),
+      ],
     );
-    controller.dispose();
-    return result;
+  }
+}
+
+class _AboutTab extends StatelessWidget {
+  const _AboutTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: const [
+        Text(
+          'Usta Takip',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 12),
+        Text(
+          'Ustaların projelerini, çalışanlarını ve ödemelerini çevrimdışı takibi için tasarlandı. '
+          'Veriler cihazınızda şifrelenmiş olarak saklanır. Premium aşamasında bulut senkronizasyonu gelecektir.',
+        ),
+      ],
+    );
   }
 }

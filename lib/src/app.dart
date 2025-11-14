@@ -5,20 +5,17 @@ import 'bootstrap/app_dependencies.dart';
 import 'domain/repositories/employee_repository.dart';
 import 'domain/repositories/expense_repository.dart';
 import 'domain/repositories/ledger_repository.dart';
+import 'domain/repositories/patron_repository.dart';
 import 'domain/repositories/project_repository.dart';
 import 'domain/repositories/wage_repository.dart';
-import 'domain/services/auth_lock_service.dart';
 import 'domain/services/backup_service.dart';
 import 'domain/usecases/record_work_day.dart';
-import 'presentation/core/lock/app_lock_state.dart';
-import 'presentation/core/lock/lock_cubit.dart';
-import 'presentation/core/lock/lock_screen.dart';
 import 'presentation/features/archive/view/archive_page.dart';
 import 'presentation/features/dashboard/cubit/dashboard_cubit.dart';
 import 'presentation/features/dashboard/view/dashboard_page.dart';
 import 'presentation/features/employees/view/employees_page.dart';
+import 'presentation/features/patrons/view/patrons_page.dart';
 import 'presentation/features/projects/view/projects_page.dart';
-import 'presentation/features/trash/view/trash_page.dart';
 
 class UstaTakipApp extends StatefulWidget {
   const UstaTakipApp({super.key, required this.dependencies});
@@ -30,7 +27,7 @@ class UstaTakipApp extends StatefulWidget {
 }
 
 class _UstaTakipAppState extends State<UstaTakipApp> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -56,81 +53,76 @@ class _UstaTakipAppState extends State<UstaTakipApp> {
         RepositoryProvider<LedgerRepository>.value(
           value: widget.dependencies.ledgerRepository,
         ),
+        RepositoryProvider<PatronRepository>.value(
+          value: widget.dependencies.patronRepository,
+        ),
         RepositoryProvider<BackupService>.value(
           value: widget.dependencies.backupService,
         ),
-        RepositoryProvider<AuthLockService>.value(
-          value: widget.dependencies.authLockService,
-        ),
       ],
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (_) => DashboardCubit(
-              ledgerRepository: widget.dependencies.ledgerRepository,
-              backupService: widget.dependencies.backupService,
-              recordWorkDay: recordWorkDay,
-            )..refresh(),
-          ),
-          BlocProvider(
-            create: (_) =>
-                LockCubit(widget.dependencies.authLockService)..initialize(),
-          ),
-        ],
+      child: BlocProvider(
+        create: (_) => DashboardCubit(
+          ledgerRepository: widget.dependencies.ledgerRepository,
+          backupService: widget.dependencies.backupService,
+          recordWorkDay: recordWorkDay,
+        )..refresh(),
         child: MaterialApp(
           title: 'Usta Takip',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData.dark(useMaterial3: true).copyWith(
+          theme: ThemeData(
+            useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blueGrey,
-              brightness: Brightness.dark,
+              seedColor: const Color(0xFF2563EB),
+              brightness: Brightness.light,
+            ),
+            scaffoldBackgroundColor: const Color(0xFFF9FAFB),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFFF9FAFB),
+              foregroundColor: Color(0xFF0F172A),
+              elevation: 0,
             ),
           ),
-          home: BlocBuilder<LockCubit, AppLockState>(
-            builder: (context, lockState) {
-              if (lockState.isLocked) {
-                return const LockScreen();
-              }
-              return Scaffold(
-                body: IndexedStack(
-                  index: _selectedIndex,
-                  children: const [
-                    DashboardPage(),
-                    ProjectsPage(),
-                    EmployeesPage(),
-                    ArchivePage(),
-                    TrashPage(),
-                  ],
+          home: Scaffold(
+            body: IndexedStack(
+              index: _selectedIndex,
+              children: const [
+                EmployeesPage(),
+                PatronsPage(),
+                DashboardPage(),
+                ProjectsPage(),
+                ArchivePage(),
+              ],
+            ),
+            bottomNavigationBar: NavigationBar(
+              height: 72,
+              backgroundColor: Colors.white,
+              indicatorColor: const Color(0xFFDBEAFE),
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) =>
+                  setState(() => _selectedIndex = index),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.groups_outlined),
+                  label: 'Çalışanlar',
                 ),
-                bottomNavigationBar: NavigationBar(
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: (index) =>
-                      setState(() => _selectedIndex = index),
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(Icons.dashboard_outlined),
-                      label: 'Dashboard',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.construction),
-                      label: 'Projeler',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.groups_2_outlined),
-                      label: 'Çalışanlar',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.archive_outlined),
-                      label: 'Arşiv',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.delete_outline),
-                      label: 'Çöp',
-                    ),
-                  ],
+                NavigationDestination(
+                  icon: Icon(Icons.handshake_outlined),
+                  label: 'Patronlar',
                 ),
-              );
-            },
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard_customize_outlined),
+                  label: 'Dashboard',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.apartment_outlined),
+                  label: 'Projeler',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.archive_outlined),
+                  label: 'Arşiv',
+                ),
+              ],
+            ),
           ),
         ),
       ),

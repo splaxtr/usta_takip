@@ -6,6 +6,8 @@ import '../data/models/employee.dart';
 import '../data/models/employee.g.dart';
 import '../data/models/expense.dart';
 import '../data/models/expense.g.dart';
+import '../data/models/patron.dart';
+import '../data/models/patron.g.dart';
 import '../data/models/project.dart';
 import '../data/models/project.g.dart';
 import '../data/models/wage_entry.dart';
@@ -13,10 +15,10 @@ import '../data/models/wage_entry.g.dart';
 import '../data/repositories/hive_employee_repository.dart';
 import '../data/repositories/hive_expense_repository.dart';
 import '../data/repositories/hive_ledger_repository.dart';
+import '../data/repositories/hive_patron_repository.dart';
 import '../data/repositories/hive_project_repository.dart';
 import '../data/repositories/hive_wage_repository.dart';
 import '../data/services/local_backup_service.dart';
-import '../data/services/secure_storage_auth_lock_service.dart';
 import '../domain/repositories/ledger_repository.dart';
 import 'app_dependencies.dart';
 import 'encryption_helper.dart';
@@ -35,6 +37,8 @@ Future<AppDependencies> bootstrapApplication() async {
       await Hive.openBox<Project>('projects', encryptionCipher: cipher);
   final employeesBox =
       await Hive.openBox<Employee>('employees', encryptionCipher: cipher);
+  final patronsBox =
+      await Hive.openBox<Patron>('patrons', encryptionCipher: cipher);
   final wagesBox =
       await Hive.openBox<WageEntry>('wage_entries', encryptionCipher: cipher);
   final expensesBox =
@@ -43,6 +47,7 @@ Future<AppDependencies> bootstrapApplication() async {
 
   final projectRepository = HiveProjectRepository(projectsBox);
   final employeeRepository = HiveEmployeeRepository(employeesBox);
+  final patronRepository = HivePatronRepository(patronsBox);
   final wageRepository = HiveWageRepository(wagesBox);
   final expenseRepository = HiveExpenseRepository(expensesBox);
   final ledgerRepository = HiveLedgerRepository(
@@ -51,10 +56,10 @@ Future<AppDependencies> bootstrapApplication() async {
     expenseBox: expensesBox,
     settingsBox: settingsBox,
   );
-  final authLockService = SecureStorageAuthLockService();
   final backupService = LocalBackupService(
     projectBox: projectsBox,
     employeeBox: employeesBox,
+    patronBox: patronsBox,
     wageBox: wagesBox,
     expenseBox: expensesBox,
     settingsBox: settingsBox,
@@ -66,9 +71,9 @@ Future<AppDependencies> bootstrapApplication() async {
     employeeRepository: employeeRepository,
     wageRepository: wageRepository,
     expenseRepository: expenseRepository,
+    patronRepository: patronRepository,
     ledgerRepository: ledgerRepository,
     backupService: backupService,
-    authLockService: authLockService,
   );
 }
 
@@ -84,5 +89,8 @@ void _registerAdapters() {
   }
   if (!Hive.isAdapterRegistered(ExpenseAdapter().typeId)) {
     Hive.registerAdapter(ExpenseAdapter());
+  }
+  if (!Hive.isAdapterRegistered(PatronAdapter().typeId)) {
+    Hive.registerAdapter(PatronAdapter());
   }
 }

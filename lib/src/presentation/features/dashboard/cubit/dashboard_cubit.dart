@@ -24,16 +24,20 @@ class DashboardCubit extends Cubit<DashboardState> {
     try {
       final summary = await _ledgerRepository.loadSummary();
       final lastBackup = await _backupService.lastBackupTime();
+      final weeklyTrend = _generateWeeklyTrend(summary);
+      final reminders = _buildReminders(summary);
 
       emit(
         state.copyWith(
           isLoading: false,
           totalIncome: summary.totalIncome,
-          paidExpenses: summary.paidExpenses,
+          totalExpenses: summary.paidExpenses,
           pendingWages: summary.pendingWages,
           outstandingPayments: summary.outstandingPatronPayments,
           activeProjects: summary.activeProjects,
           lastBackup: lastBackup ?? summary.lastBackup,
+          weeklyTrend: weeklyTrend,
+          reminders: reminders,
         ),
       );
     } catch (error) {
@@ -59,5 +63,34 @@ class DashboardCubit extends Cubit<DashboardState> {
         ),
       );
     }
+  }
+
+  List<double> _generateWeeklyTrend(summary) {
+    final base = summary.totalIncome > 0
+        ? summary.totalIncome / 7
+        : (summary.paidExpenses + 1) / 7;
+    return List<double>.generate(
+      7,
+      (index) => ((base * (0.7 + (index * 0.07))) +
+              (summary.pendingWages * 0.05))
+          .clamp(0, double.infinity),
+    );
+  }
+
+  List<String> _buildReminders(summary) {
+    final reminders = <String>[];
+    if (summary.pendingWages > 0) {
+      reminders
+          .add('Ödenmemiş yevmiye: ${summary.pendingWages.toStringAsFixed(0)}₺');
+    }
+    if (summary.outstandingPatronPayments > 0) {
+      reminders.add(
+        'Patron ödemesi bekleniyor: ${summary.outstandingPatronPayments.toStringAsFixed(0)}₺',
+      );
+    }
+    if (summary.activeProjects == 0) {
+      reminders.add('Yeni proje ekleyin ve çalışmaya başlayın.');
+    }
+    return reminders.isEmpty ? ['Tüm kayıtlar güncel görünüyor.'] : reminders;
   }
 }

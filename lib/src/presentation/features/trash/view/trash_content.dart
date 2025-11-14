@@ -8,68 +8,85 @@ import '../../../../domain/repositories/project_repository.dart';
 import '../cubit/trash_cubit.dart';
 import '../cubit/trash_state.dart';
 
-class TrashPage extends StatelessWidget {
-  const TrashPage({super.key});
+class TrashContent extends StatelessWidget {
+  const TrashContent({super.key, this.embedded = true});
+
+  final bool embedded;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
+    final content = BlocProvider(
       create: (_) => TrashCubit(
         context.read<ProjectRepository>(),
         context.read<EmployeeRepository>(),
       )..load(),
-      child: const _TrashView(),
+      child: const _TrashTabs(),
+    );
+
+    if (embedded) {
+      return content;
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Çöp Kutusu')),
+      body: Padding(
+        padding: const EdgeInsets.all(8),
+        child: content,
+      ),
     );
   }
 }
 
-class _TrashView extends StatelessWidget {
-  const _TrashView();
+class _TrashTabs extends StatelessWidget {
+  const _TrashTabs();
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Çöp Kutusu'),
-          bottom: const TabBar(
-            tabs: [
+      child: Column(
+        children: [
+          TabBar(
+            labelColor: Theme.of(context).colorScheme.primary,
+            tabs: const [
               Tab(text: 'Projeler'),
               Tab(text: 'Çalışanlar'),
             ],
           ),
-        ),
-        body: BlocBuilder<TrashCubit, TrashState>(
-          builder: (context, state) {
-            if (state.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return TabBarView(
-              children: [
-                _TrashList<Project>(
-                  items: state.projects,
-                  subtitleBuilder: (project) => 'Patron: ${project.patronId}',
-                  onRestore: (id) =>
-                      context.read<TrashCubit>().restoreProject(id),
-                  onDeleteForever: (id) =>
-                      context.read<TrashCubit>().deleteProjectForever(id),
-                  emptyLabel: 'Silinmiş proje yok',
-                ),
-                _TrashList<Employee>(
-                  items: state.employees,
-                  subtitleBuilder: (employee) =>
-                      'Proje: ${employee.projectId}',
-                  onRestore: (id) =>
-                      context.read<TrashCubit>().restoreEmployee(id),
-                  onDeleteForever: (id) =>
-                      context.read<TrashCubit>().deleteEmployeeForever(id),
-                  emptyLabel: 'Silinmiş çalışan yok',
-                ),
-              ],
-            );
-          },
-        ),
+          Expanded(
+            child: BlocBuilder<TrashCubit, TrashState>(
+              builder: (context, state) {
+                if (state.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return TabBarView(
+                  children: [
+                    _TrashList<Project>(
+                      items: state.projects,
+                      subtitleBuilder: (project) =>
+                          'Patron: ${project.patronId}',
+                      onRestore: (id) =>
+                          context.read<TrashCubit>().restoreProject(id),
+                      onDeleteForever: (id) =>
+                          context.read<TrashCubit>().deleteProjectForever(id),
+                      emptyLabel: 'Silinmiş proje yok',
+                    ),
+                    _TrashList<Employee>(
+                      items: state.employees,
+                      subtitleBuilder: (employee) =>
+                          'Proje: ${employee.projectId}',
+                      onRestore: (id) =>
+                          context.read<TrashCubit>().restoreEmployee(id),
+                      onDeleteForever: (id) =>
+                          context.read<TrashCubit>().deleteEmployeeForever(id),
+                      emptyLabel: 'Silinmiş çalışan yok',
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -112,7 +129,7 @@ class _TrashList<T> extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.undo),
+                  icon: const Icon(Icons.settings_backup_restore),
                   onPressed: () => onRestore(id),
                 ),
                 IconButton(

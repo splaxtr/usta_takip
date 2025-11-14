@@ -81,7 +81,6 @@ dependencies:
   connectivity_plus: ^7.0.0  # İnternet bağlantısı kontrolü
   device_info_plus: ^12.1.0  # Cihaz bilgisi
   package_info_plus: ^9.0.0  # Uygulama bilgisi
-  local_auth: ^2.2.0
   crypto: ^3.0.6
   encrypt: ^5.0.3
   

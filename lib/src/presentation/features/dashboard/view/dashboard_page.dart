@@ -1,11 +1,16 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 
-import '../../../../domain/usecases/record_work_day.dart';
-import '../../ledger/view/ledger_list_page.dart';
-import '../../settings/view/settings_page.dart';
-import '../cubit/dashboard_cubit.dart';
-import '../cubit/dashboard_state.dart';
+import '../../../../data/models/employee.dart';
+import '../../../../data/models/project.dart';
+import '../../../../domain/repositories/employee_repository.dart';
+import '../../../../domain/repositories/patron_repository.dart';
+import '../../../../domain/repositories/project_repository.dart';
+import '../../../../presentation/features/settings/view/settings_page.dart';
+import '../../../dashboard/cubit/dashboard_cubit.dart';
+import '../../../dashboard/cubit/dashboard_state.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -13,159 +18,258 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Usta Takip Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context.read<DashboardCubit>().refresh(),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showRecordWorkDayDialog(context),
-        label: const Text('Mesai Kaydet'),
-        icon: const Icon(Icons.add),
-      ),
-      body: BlocBuilder<DashboardCubit, DashboardState>(
-        builder: (context, state) {
-          if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state.errorMessage != null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: BlocBuilder<DashboardCubit, DashboardState>(
+            builder: (context, state) {
+              if (state.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state.errorMessage != null) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(state.errorMessage!),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () =>
+                            context.read<DashboardCubit>().refresh(),
+                        child: const Text('Tekrar Dene'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return SingleChildScrollView(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      state.errorMessage!,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
+                    _DashboardHeader(
+                      onAddEmployee: () => _quickAddEmployee(context),
+                      onAddProject: () => _quickAddProject(context),
+                      onOpenSettings: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsPage(),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => context.read<DashboardCubit>().refresh(),
-                      child: const Text('Tekrar Dene'),
+                    const SizedBox(height: 16),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.15,
+                      children: [
+                        _MetricCard(
+                          icon: Icons.payments_outlined,
+                          label: 'Toplam Gelir',
+                          value:
+                              '${state.totalIncome.toStringAsFixed(0)} ₺',
+                          color: const Color(0xFF2563EB),
+                        ),
+                        _MetricCard(
+                          icon: Icons.receipt_long_outlined,
+                          label: 'Toplam Gider',
+                          value:
+                              '${state.totalExpenses.toStringAsFixed(0)} ₺',
+                          color: const Color(0xFF60A5FA),
+                        ),
+                        _MetricCard(
+                          icon: Icons.timer_outlined,
+                          label: 'Bekleyen Yevmiye',
+                          value:
+                              '${state.pendingWages.toStringAsFixed(0)} ₺',
+                          color: Colors.orangeAccent,
+                        ),
+                        _MetricCard(
+                          icon: Icons.assignment_outlined,
+                          label: 'Aktif Proje',
+                          value: state.activeProjects.toString(),
+                          color: Colors.green,
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 16),
+                    _TrendCard(weeklyTrend: state.weeklyTrend),
+                    const SizedBox(height: 16),
+                    _ReminderCard(reminders: state.reminders),
                   ],
                 ),
-              ),
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () => context.read<DashboardCubit>().refresh(),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _DashboardCard(
-                  title: 'Toplam Gelir',
-                  value: '${state.totalIncome.toStringAsFixed(0)} ₺',
-                  icon: Icons.account_balance_wallet_outlined,
-                ),
-                _DashboardCard(
-                  title: 'Ödenmiş Giderler',
-                  value: '${state.paidExpenses.toStringAsFixed(0)} ₺',
-                  icon: Icons.outbox_rounded,
-                  onTap: () =>
-                      _openLedgerList(context, LedgerListType.paidExpenses),
-                ),
-                _DashboardCard(
-                  title: 'Bekleyen Yevmiyeler',
-                  value: '${state.pendingWages.toStringAsFixed(0)} ₺',
-                  icon: Icons.timer_outlined,
-                  valueColor: Colors.orange.shade700,
-                  onTap: () =>
-                      _openLedgerList(context, LedgerListType.pendingWages),
-                ),
-                _DashboardCard(
-                  title: 'Patron Alacakları',
-                  value: '${state.outstandingPayments.toStringAsFixed(0)} ₺',
-                  icon: Icons.warning_amber,
-                  valueColor: Colors.redAccent,
-                  onTap: () =>
-                      _openLedgerList(context, LedgerListType.outstanding),
-                ),
-                _DashboardCard(
-                  title: 'Aktif Proje',
-                  value: state.activeProjects.toString(),
-                  icon: Icons.home_repair_service_outlined,
-                ),
-                _DashboardCard(
-                  title: 'Son Yedekleme',
-                  value: state.lastBackup != null
-                      ? state.lastBackup!.toLocal().toString()
-                      : 'Henüz yapılmadı',
-                  icon: Icons.backup_outlined,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SettingsPage()),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 
-  Future<void> _showRecordWorkDayDialog(BuildContext context) async {
-    final employeeController = TextEditingController();
-    final projectController = TextEditingController();
-    final amountController = TextEditingController();
+  Future<void> _quickAddEmployee(BuildContext context) async {
+    final employeeRepo = context.read<EmployeeRepository>();
+    final projectRepo = context.read<ProjectRepository>();
+    final projects = await projectRepo.getAll();
+    final nameController = TextEditingController();
+    final wageController = TextEditingController();
+    String? selectedProjectId =
+        projects.isNotEmpty ? projects.first.id : null;
+    final formKey = GlobalKey<FormState>();
 
-    await showDialog<void>(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mesai Kaydet'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: projectController,
-              decoration: const InputDecoration(labelText: 'Proje ID'),
-            ),
-            TextField(
-              controller: employeeController,
-              decoration: const InputDecoration(labelText: 'Çalışan ID'),
-            ),
-            TextField(
-              controller: amountController,
-              decoration: const InputDecoration(labelText: 'Tutar'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+        title: const Text('Hızlı Çalışan Ekle'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Ad Soyad'),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty
+                        ? 'Zorunlu'
+                        : null,
+              ),
+              TextFormField(
+                controller: wageController,
+                decoration:
+                    const InputDecoration(labelText: 'Günlük Ücret'),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) =>
+                    (double.tryParse(value ?? '') ?? 0) <= 0
+                        ? 'Geçerli tutar girin'
+                        : null,
+              ),
+              if (projects.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  value: selectedProjectId,
+                  decoration:
+                      const InputDecoration(labelText: 'Proje'),
+                  items: projects
+                      .map(
+                        (project) => DropdownMenuItem(
+                          value: project.id,
+                          child: Text(project.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => selectedProjectId = value,
+                ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.pop(context),
             child: const Text('İptal'),
           ),
           ElevatedButton(
             onPressed: () async {
-              final amount = double.tryParse(amountController.text) ?? 0;
-              final employeeId = employeeController.text.trim();
-              final projectId = projectController.text.trim();
-              if (employeeId.isEmpty || projectId.isEmpty || amount <= 0) {
-                return;
-              }
-              await context.read<DashboardCubit>().recordWorkDay(
-                    RecordWorkDayParams(
-                      employeeId: employeeId,
-                      projectId: projectId,
-                      date: DateTime.now(),
-                      amount: amount,
-                    ),
-                  );
+              if (!formKey.currentState!.validate()) return;
+              final employee = Employee(
+                id: const Uuid().v4(),
+                name: nameController.text.trim(),
+                dailyWage: double.parse(wageController.text.trim()),
+                phone: '',
+                projectId: selectedProjectId ?? '',
+              );
+              await employeeRepo.add(employee);
               if (context.mounted) {
-                Navigator.of(context).pop();
+                Navigator.pop(context);
+                context.read<DashboardCubit>().refresh();
+              }
+            },
+            child: const Text('Kaydet'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _quickAddProject(BuildContext context) async {
+    final projectRepo = context.read<ProjectRepository>();
+    final patronRepo = context.read<PatronRepository>();
+    final patrons = await patronRepo.getAll();
+    final nameController = TextEditingController();
+    final budgetController = TextEditingController();
+    String? selectedPatronId =
+        patrons.isNotEmpty ? patrons.first.id : null;
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hızlı Proje Ekle'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Proje Adı'),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty
+                        ? 'Zorunlu'
+                        : null,
+              ),
+              TextFormField(
+                controller: budgetController,
+                decoration:
+                    const InputDecoration(labelText: 'Toplam Bütçe'),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) =>
+                    (double.tryParse(value ?? '') ?? 0) <= 0
+                        ? 'Geçerli bütçe'
+                        : null,
+              ),
+              if (patrons.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  value: selectedPatronId,
+                  decoration:
+                      const InputDecoration(labelText: 'Patron'),
+                  items: patrons
+                      .map(
+                        (patron) => DropdownMenuItem(
+                          value: patron.id,
+                          child: Text(patron.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => selectedPatronId = value,
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              final project = Project(
+                id: const Uuid().v4(),
+                name: nameController.text.trim(),
+                patronId: selectedPatronId ?? '',
+                totalBudget: double.parse(budgetController.text.trim()),
+                defaultDailyWage: 0,
+                startDate: DateTime.now(),
+              );
+              await projectRepo.add(project);
+              if (context.mounted) {
+                Navigator.pop(context);
+                context.read<DashboardCubit>().refresh();
               }
             },
             child: const Text('Kaydet'),
@@ -176,60 +280,261 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-void _openLedgerList(BuildContext context, LedgerListType type) {
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => LedgerListPage(listType: type),
-    ),
-  );
-}
-
-class _DashboardCard extends StatelessWidget {
-  const _DashboardCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    this.valueColor,
-    this.onTap,
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({
+    required this.onAddEmployee,
+    required this.onAddProject,
+    required this.onOpenSettings,
   });
 
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color? valueColor;
-  final VoidCallback? onTap;
+  final VoidCallback onAddEmployee;
+  final VoidCallback onAddProject;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Usta Takip',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  'Projelerini tek yerden yönet',
+                  style: TextStyle(color: Color(0xFF64748B)),
+                ),
+              ],
+            ),
+            IconButton(
+              onPressed: onOpenSettings,
+              icon: const Icon(Icons.settings),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            _QuickActionButton(
+              icon: Icons.person_add_alt,
+              label: 'Çalışan',
+              onTap: onAddEmployee,
+            ),
+            const SizedBox(width: 12),
+            _QuickActionButton(
+              icon: Icons.add_business,
+              label: 'Proje',
+              onTap: onAddProject,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, color: const Color(0xFF2563EB)),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(icon, size: 32, color: theme.colorScheme.primary),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Text(
-                      value,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: valueColor ?? theme.colorScheme.onSurface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.2),
+              child: Icon(icon, color: color),
+            ),
+            const Spacer(),
+            Text(
+              value,
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              label,
+              style: const TextStyle(color: Color(0xFF94A3B8)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendCard extends StatelessWidget {
+  const _TrendCard({required this.weeklyTrend});
+
+  final List<double> weeklyTrend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Bu Hafta',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const Icon(Icons.show_chart, color: Color(0xFF2563EB)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 180,
+              child: weeklyTrend.isEmpty
+                  ? const Center(child: Text('Grafik için veri bekleniyor'))
+                  : LineChart(
+                      LineChartData(
+                        gridData: FlGridData(show: false),
+                        titlesData: FlTitlesData(
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                final labels = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+                                final index = value.toInt();
+                                if (index < 0 || index >= labels.length) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Text(labels[index],
+                                    style: const TextStyle(fontSize: 11));
+                              },
+                            ),
+                          ),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        lineBarsData: [
+                          LineChartBarData(
+                            isCurved: true,
+                            color: const Color(0xFF2563EB),
+                            dotData: const FlDotData(show: false),
+                            barWidth: 4,
+                            spots: weeklyTrend
+                                .asMap()
+                                .entries
+                                .map(
+                                  (entry) => FlSpot(
+                                    entry.key.toDouble(),
+                                    entry.value,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ],
                       ),
                     ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReminderCard extends StatelessWidget {
+  const _ReminderCard({required this.reminders});
+
+  final List<String> reminders;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+                Text(
+              'Hatırlatmalar',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            ...reminders.map(
+              (reminder) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.notifications_active,
+                        size: 18, color: Color(0xFF2563EB)),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(reminder)),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
