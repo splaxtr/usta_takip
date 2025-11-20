@@ -112,24 +112,23 @@ dev_dependencies:
   flutter_native_splash: ^2.4.6  # Splash screen oluşturma
   
   # Code Generation (ihtiyaç durumunda)
-  # json_serializable: ^6.7.1  # JSON serialization
+  json_serializable: ^6.7.1  # JSON serialization
   # freezed: ^2.4.6  # Immutable classes
   hive_generator: ^2.0.1  # Hive type adapters
 
 # Flutter launcher icons konfigürasyonu
-# flutter_launcher_icons:
-#   android: true
-#   ios: true
-#   image_path: "assets/images/icon.png"
-#   adaptive_icon_background: "#FFFFFF"
-#   adaptive_icon_foreground: "assets/images/icon_foreground.png"
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/icon.png"
+#  adaptive_icon_background: "#FFFFFF"
 
 # Splash screen konfigürasyonu
-# flutter_native_splash:
-#   color: "#FFFFFF"
-#   image: assets/images/splash.png
-#   android: true
-#   ios: true
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/icon.png
+  android: true
+  ios: true
 
 # Flutter ayarları
 flutter:
@@ -141,109 +140,3 @@ flutter:
     - assets/icons/
     - assets/fonts/
     - assets/animations/
-
-  # Özel fontlar (isteğe bağlı)
-  # fonts:
-  #   - family: Poppins
-  #     fonts:
-  #       - asset: assets/fonts/Poppins-Regular.ttf
-  #       - asset: assets/fonts/Poppins-Bold.ttf
-  #         weight: 700
-  #       - asset: assets/fonts/Poppins-Light.ttf
-  #         weight: 300
-  #   
-  #   - family: Roboto
-  #     fonts:
-  #       - asset: assets/fonts/Roboto-Regular.ttf
-  #       - asset: assets/fonts/Roboto-Bold.ttf
-  #         weight: 700
-
-# Build ayarları (isteğe bağlı)
-# flutter:
-#   generate: true  # Code generation için
-
-################################################################################
-# KURULUM TALİMATLARI
-################################################################################
-#
-# 1. Temel kurulum:
-#    flutter pub get
-#
-# 2. İhtiyacınız olan paketlerin yorumlarını kaldırın:
-#    - State management için: provider VEYA riverpod VEYA flutter_bloc
-#    - API için: http VEYA dio
-#    - Local storage için: shared_preferences VEYA hive VEYA sqflite
-#
-# 3. Paketleri yükleyin:
-#    flutter pub get
-#
-# 4. Asset klasörlerini oluşturun:
-#    mkdir -p assets/images assets/icons
-#
-# 5. Uygulama ikonunu ayarlayın:
-#    - assets/images/icon.png dosyasını ekleyin (1024x1024 px)
-#    - flutter_launcher_icons konfigürasyonunu etkinleştirin
-#    - flutter pub run flutter_launcher_icons
-#
-# 6. Platform-specific ayarlar:
-#    
-#    Android (android/app/build.gradle):
-#    - minSdkVersion: 21 (minimum)
-#    - targetSdkVersion: 34 (güncel)
-#    - compileSdkVersion: 34
-#    
-#    iOS (ios/Podfile):
-#    - platform :ios, '12.0' (minimum)
-#
-# 7. İzinler ekleyin:
-#    
-#    Android (android/app/src/main/AndroidManifest.xml):
-#    <uses-permission android:name="android.permission.INTERNET"/>
-#    <uses-permission android:name="android.permission.CAMERA"/>
-#    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-#    
-#    iOS (ios/Runner/Info.plist):
-#    <key>NSCameraUsageDescription</key>
-#    <string>Fotoğraf çekmek için kamera erişimi gerekli</string>
-#    <key>NSLocationWhenInUseUsageDescription</key>
-#    <string>Konum bilgisi almak için izin gerekli</string>
-#
-################################################################################
-# ÖNERİLEN PAKET KOMBİNASYONLARI
-################################################################################
-#
-# Başlangıç Seviyesi:
-# - provider (state management)
-# - http (networking)
-# - shared_preferences (local storage)
-# - image_picker (resim seçme)
-#
-# Orta Seviye:
-# - riverpod (state management)
-# - dio (networking)
-# - hive + hive_flutter (local storage)
-# - cached_network_image (image caching)
-# - intl (formatting)
-#
-# İleri Seviye:
-# - flutter_bloc (state management)
-# - dio + retrofit (networking)
-# - sqflite (database)
-# - firebase_* (backend services)
-# - fl_chart (charts)
-# - sentry_flutter (error tracking)
-#
-################################################################################
-# GÜNCELLEME
-################################################################################
-#
-# Tüm paketleri güncellemek için:
-# flutter pub upgrade
-#
-# Belirli bir paketi güncellemek için:
-# flutter pub upgrade [paket_adi]
-#
-# Paket versiyonlarını kontrol etmek için:
-# flutter pub outdated
-#
-################################################################################

@@ -51,6 +51,7 @@ class ProjectsListScreen extends StatelessWidget {
           );
 
           // ValueListenableBuilder otomatik yeniler ama bildirim göster
+          if (!context.mounted) return;
           if (result == true) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -81,7 +82,7 @@ class ProjectsListScreen extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E).withOpacity(0.5),
+          color: const Color(0xFF1E1E1E).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
