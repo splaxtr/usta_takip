@@ -125,23 +125,24 @@ dev_dependencies:
   flutter_native_splash: ^2.4.6  # Splash screen oluşturma
   
   # Code Generation (ihtiyaç durumunda)
-  json_serializable: ^6.7.1  # JSON serialization
+  # json_serializable: ^6.7.1  # JSON serialization
   # freezed: ^2.4.6  # Immutable classes
   hive_generator: ^2.0.1  # Hive type adapters
 
 # Flutter launcher icons konfigürasyonu
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: "assets/images/icon.png"
-#  adaptive_icon_background: "#FFFFFF"
+# flutter_launcher_icons:
+#   android: true
+#   ios: true
+#   image_path: "assets/images/icon.png"
+#   adaptive_icon_background: "#FFFFFF"
+#   adaptive_icon_foreground: "assets/images/icon_foreground.png"
 
 # Splash screen konfigürasyonu
-flutter_native_splash:
-  color: "#FFFFFF"
-  image: assets/images/icon.png
-  android: true
-  ios: true
+# flutter_native_splash:
+#   color: "#FFFFFF"
+#   image: assets/images/splash.png
+#   android: true
+#   ios: true
 
 # Flutter ayarları
 flutter:
@@ -153,7 +154,6 @@ flutter:
     - assets/icons/
     - assets/fonts/
     - assets/animations/
-<<<<<<< HEAD
 
   # Özel fontlar (isteğe bağlı)
   # fonts:
@@ -260,5 +260,3 @@ flutter:
 # flutter pub outdated
 #
 ################################################################################
-=======
->>>>>>> 02bd8cf

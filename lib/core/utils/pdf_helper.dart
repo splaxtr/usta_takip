@@ -647,31 +647,8 @@ class PDFHelper {
   // PDF Kaydet
   static Future<File?> savePDF(pw.Document pdf, String fileName) async {
     try {
-      Directory? baseDir;
-
-      // Tercihen İndirilenler klasörü
-      try {
-        baseDir = await getDownloadsDirectory();
-      } catch (_) {
-        baseDir = null;
-      }
-
-      // Android'de getDownloadsDirectory null dönebilir, external/Download'a düş
-      if (baseDir == null && Platform.isAndroid) {
-        final extDir = await getExternalStorageDirectory();
-        if (extDir != null) {
-          baseDir = Directory('${extDir.path}/Download');
-        }
-      }
-
-      // Son çare: uygulama dokümanları
-      baseDir ??= await getApplicationDocumentsDirectory();
-
-      if (!await baseDir.exists()) {
-        await baseDir.create(recursive: true);
-      }
-
-      final file = File('${baseDir.path}/$fileName');
+      final output = await getApplicationDocumentsDirectory();
+      final file = File('${output.path}/$fileName');
       await file.writeAsBytes(await pdf.save());
       return file;
     } catch (e) {
